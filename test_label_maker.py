@@ -1,3 +1,6 @@
+import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -170,6 +173,58 @@ class LabelTests(unittest.TestCase):
             self.assertAlmostEqual(l.HEIGHT, 23.76)
         finally:
             l.HEIGHT, l.BAR_Y = old_height, old_bar_y
+
+    def test_separate_habitat_templates_and_centering(self):
+        main = l.separate_habitat_templates(l.DEFAULT_LINES)
+        self.assertEqual(len(main), 5)
+        self.assertFalse(any('Habitat_Label' in t for t in main))
+        with self.assertRaisesRegex(ValueError, 'own template entries'):
+            l.separate_habitat_templates(['[LocalityLabel], [MacroHabitat_Label]'])
+        row = {'_excel_row': 2, 'Catalog_Number': 'DEMO000001',
+               'MacroHabitat_Label': 'meadow', 'Microhabitat_Label': 'pan traps'}
+        height = .15 * 72
+        plan = l.habitat_label_plan(row, l.MIN_WIDTH, height)
+        self.assertEqual(plan['font_points'], 4)
+        self.assertEqual(plan['lines'], ['meadow', 'pan traps'])
+        above, _ = l.ink_bounds('meadow', 4)
+        _, below = l.ink_bounds('pan traps', 4)
+        self.assertAlmostEqual(plan['baselines'][0] + above,
+                               height - (plan['baselines'][1] - below))
+        row['Microhabitat_Label'] = 'far too much habitat information ' * 10
+        with self.assertRaisesRegex(ValueError, 'one line at 4 pt'):
+            l.habitat_label_plan(row, l.MIN_WIDTH, height)
+
+    def test_separate_habitat_pairs_across_pages(self):
+        from pypdf import PdfReader
+        script = Path(l.__file__).resolve()
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            book = openpyxl.load_workbook(script.parent / 'examples/example_specimens.xlsx')
+            sheet = book.active
+            sample = list(next(sheet.iter_rows(min_row=2, max_row=2, values_only=True)))
+            sheet.delete_rows(2, sheet.max_row)
+            for i in range(221):
+                row = list(sample)
+                row[0] = f'DEMO{i:06d}'
+                sheet.append(row)
+            source = root / 'specimens.xlsx'
+            output = root / 'pairs.pdf'
+            book.save(source)
+            result = subprocess.run([sys.executable, str(script), str(source), '--separate-habitat',
+                                     '--output', str(output)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(output.with_suffix('.json').read_text())
+            self.assertEqual(report['physical_labels'], 442)
+            self.assertEqual(report['habitat_font_points'], 4)
+            self.assertEqual(len(PdfReader(output).pages), 2)
+            self.assertEqual(report['records'][219]['habitat_label']['page'], 1)
+            self.assertEqual(report['records'][220]['habitat_label']['page'], 2)
+            for record in report['records']:
+                self.assertEqual(len(record['lines']), 5)
+                plan = record['habitat_label']
+                self.assertGreaterEqual(plan['y_points'], 18)
+                self.assertEqual(plan['font_points'], 4)
+                self.assertEqual(plan['lines'], ['meadow', 'pan traps'])
 
     def test_duplicate_ids_rejected(self):
         with tempfile.TemporaryDirectory() as folder:

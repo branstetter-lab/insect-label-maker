@@ -21,6 +21,7 @@ SIZE = 3.5
 MAIN_SIZE = 4.0
 LAYOUT_MODE = "lines"
 FONT_PATH = "/System/Library/Fonts/Supplemental/Arial.ttf"
+ITALIC_FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Italic.ttf"
 CATALOG_SIZE = 3.75
 FIELD_SIZE = 3.1
 CATALOG_PAD = .3
@@ -373,6 +374,52 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
     draw_text(pdf, bx + BAR, y + EVENT_Y, row.get('Field_Number', ''), right=True, size=FIELD_SIZE)
 
 
+def separate_habitat_templates(templates):
+    habitat_fields = {'MacroHabitat_Label', 'Microhabitat_Label'}
+    result = []
+    for template in templates:
+        fields = set(re.findall(r'\[([^\]]+)\]', template))
+        if fields & habitat_fields:
+            if fields - habitat_fields:
+                raise ValueError('Separate habitat labels require habitat fields in their own template entries.')
+            continue
+        result.append(template)
+    if not result:
+        raise ValueError('The main label template has no fields left after separating habitat.')
+    return result
+
+
+def habitat_label_plan(row, label_width, height):
+    texts = [row['MacroHabitat_Label'], row['Microhabitat_Label']]
+    for text in texts:
+        if width(text, 4) > label_width - 2 * PAD - .3:
+            raise ValueError(f"Excel row {row['_excel_row']} ({row['Catalog_Number']}): habitat text cannot fit on one line at 4 pt: {text!r}. Shorten its label field; width cannot exceed 0.68 inches.")
+    above0, below0 = ink_bounds(texts[0] or 'Ag', 4)
+    above1, below1 = ink_bounds(texts[1] or 'Ag', 4)
+    if taxon_italic_ranges(texts[1]):
+        italic = ImageFont.truetype(ITALIC_FONT_PATH, 4000)
+        box = italic.getbbox(texts[1], anchor='ls')
+        above1, below1 = max(above1, -box[1] / 1000), max(below1, box[3] / 1000)
+    leading = max(4.6, below0 + above1 + .3)
+    block_height = above0 + leading + below1
+    if block_height > height - 2 * PAD:
+        raise ValueError('Habitat label is too short for two 4-point lines. Increase --habitat-height.')
+    top_baseline = (height + block_height) / 2 - above0
+    return {'lines': texts, 'font_points': 4, 'baselines': [top_baseline, top_baseline - leading],
+            'height_inches': height / 72, 'width_inches': label_width / 72}
+
+
+def draw_habitat_label(pdf, plan, x, y, label_width, guides):
+    if guides:
+        pdf.setStrokeColorRGB(.8, .8, .8)
+        pdf.setLineWidth(.15)
+        pdf.rect(x, y, label_width, plan['height_inches'] * 72)
+        pdf.setStrokeColorRGB(0, 0, 0)
+    for i, text in enumerate(plan['lines']):
+        emphasis = taxon_italic_ranges(text) if i == 1 else []
+        draw_text(pdf, x + PAD, y + plan['baselines'][i], text, size=4, italic_ranges=emphasis)
+
+
 def configure_dimensions(width_inches, height_inches, max_width=None):
     global HEIGHT, BAR_Y
     if not math.isfinite(width_inches) or not 0 < width_inches <= MAX_WIDTH_INCHES:
@@ -386,7 +433,7 @@ def configure_dimensions(width_inches, height_inches, max_width=None):
 
 
 def generate(args):
-    global MAIN_SIZE, FONT_PATH, LAYOUT_MODE
+    global MAIN_SIZE, FONT_PATH, LAYOUT_MODE, ITALIC_FONT_PATH
     configure_dimensions(args.width, args.height, args.max_width)
     MAIN_SIZE = args.main_size
     LAYOUT_MODE = args.layout
@@ -396,6 +443,7 @@ def generate(args):
     if not font.is_file():
         raise ValueError('Arial font not found. Supply its .ttf path with --font.')
     pdfmetrics.registerFont(TTFont('Arial', str(font)))
+    ITALIC_FONT_PATH = args.italic_font
     italic_path = Path(args.italic_font)
     if not italic_path.is_file():
         raise ValueError('Arial Italic font not found. Supply --italic-font with its .ttf path.')
@@ -408,7 +456,19 @@ def generate(args):
     templates = json.loads(Path(args.template).read_text()) if args.template else DEFAULT_LINES
     if not isinstance(templates, list) or not templates or not all(isinstance(t, str) for t in templates):
         raise ValueError('Template must be a JSON list of line strings.')
+    if not math.isfinite(args.habitat_height) or args.habitat_height <= 0:
+        raise ValueError('--habitat-height must be a positive number of inches.')
+    if not math.isfinite(args.habitat_gap) or args.habitat_gap < 0:
+        raise ValueError('--habitat-gap must be zero or a positive number of inches.')
+    if args.separate_habitat:
+        for row in rows:
+            if not {'MacroHabitat_Label', 'Microhabitat_Label'} <= row.keys():
+                raise ValueError('Separate habitat labels require MacroHabitat_Label and Microhabitat_Label columns.')
+        templates = separate_habitat_templates(templates)
     common_width = args.width * 72
+    habitat_height = args.habitat_height * 72
+    habitat_gap = args.habitat_gap * 72
+    habitat_plans = [habitat_label_plan(row, common_width, habitat_height) for row in rows] if args.separate_habitat else []
     for row in rows:
         if not any(layout(row, templates, common_width, uncertainty) is not None for uncertainty in (True, False)):
             raise ValueError(f"Excel row {row['_excel_row']} ({row['Catalog_Number']}) cannot fit at {MAIN_SIZE:g} pt main / 3.5 pt habitat within {args.width:g} × {args.height:g} inches. Shorten label fields, try --layout flow, or increase --height. Width cannot exceed 0.68 inches.")
@@ -422,7 +482,10 @@ def generate(args):
         plans.append((lines, keep))
     margin, gap = 18, PAGE_GAP
     cols = int((612 - 2 * margin + gap) // (common_width + gap))
-    per_col = int((792 - 2 * margin + gap) // (HEIGHT + gap))
+    pair_height = HEIGHT + habitat_gap + habitat_height if args.separate_habitat else HEIGHT
+    per_col = int((792 - 2 * margin + gap) // (pair_height + gap))
+    if per_col < 1:
+        raise ValueError('The main and habitat label pair must fit together within the page margins. Reduce their heights or gap.')
     if cols < 1:
         raise ValueError('Label width exceeds printable page width.')
     output = Path(args.output)
@@ -437,23 +500,36 @@ def generate(args):
             pdf.showPage()
         col, r = divmod(position, per_col)
         x = margin + col * (common_width + gap)
-        y = 792 - margin - HEIGHT - r * (HEIGHT + gap)
+        y = 792 - margin - HEIGHT - r * (pair_height + gap)
         draw_label(pdf, row, lines, x, y, common_width, args.guides)
+        habitat_report = None
+        if args.separate_habitat:
+            habitat_report = dict(habitat_plans[index])
+            habitat_report.update(page=index // (cols * per_col) + 1, x_points=x,
+                                  y_points=y - habitat_gap - habitat_height)
+            draw_habitat_label(pdf, habitat_report, x, habitat_report['y_points'], common_width, args.guides)
         report.append({'excel_row': row['_excel_row'], 'catalog_number': row['Catalog_Number'],
                        'uncertainty_omitted': bool(row.get('Uncertainty')) and not keep,
                        'macrohabitat_omitted': _layout(row, templates, common_width, keep) is None,
                        'line_text_runs': [coordinate_runs(row, text, size) for text, size in zip(lines, lines.sizes)],
-                       'line_font_points': lines.sizes, 'line_baselines': lines.baselines, 'lines': lines})
+                       'line_font_points': lines.sizes, 'line_baselines': lines.baselines, 'lines': lines,
+                       'habitat_label': habitat_report})
     pdf.save()
     temp.replace(output)
-    summary = {'labels': len(rows), 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
-               'layout': LAYOUT_MODE, 'font': 'Arial', 'font_points': MAIN_SIZE, 'habitat_font_points': SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
+    summary = {'labels': len(rows), 'separate_habitat': args.separate_habitat,
+               'physical_labels': len(rows) * (2 if args.separate_habitat else 1),
+               'habitat_label_height_inches': args.habitat_height if args.separate_habitat else None,
+               'habitat_label_gap_inches': args.habitat_gap if args.separate_habitat else None, 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
+               'layout': LAYOUT_MODE, 'font': 'Arial', 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
                'barcode_dark_symbol_inches': 0.11, 'barcode_center_y_inches': HEIGHT / 144,
                'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'barcode': 'Data Matrix',
                'macrohabitat_omitted_count': sum(r['macrohabitat_omitted'] for r in report),
                'uncertainty_omitted_count': sum(r['uncertainty_omitted'] for r in report), 'records': report}
     output.with_suffix('.json').write_text(json.dumps(summary, indent=2))
-    print(f"Created {output}: {len(rows)} labels, {common_width / 72:.2f} × {HEIGHT / 72:.2f} in, Arial {MAIN_SIZE:g} pt main / 3.5 pt habitat.")
+    habitat_description = '4 pt on separate habitat labels' if args.separate_habitat else '3.5 pt habitat'
+    print(f"Created {output}: {len(rows)} main labels, {common_width / 72:.2f} × {HEIGHT / 72:.2f} in, Arial {MAIN_SIZE:g} pt main / {habitat_description}.")
+    if args.separate_habitat:
+        print(f"Added {len(rows)} habitat labels, {common_width / 72:.2f} × {args.habitat_height:.2f} in, {args.habitat_gap:.2f}-inch gap.")
     print(f"Macrohabitat omitted on {summary['macrohabitat_omitted_count']} labels.")
     print(f"Uncertainty omitted on {summary['uncertainty_omitted_count']} labels. Review {output.with_suffix('.json')}.")
 
@@ -471,6 +547,9 @@ def main():
     p.add_argument('--width', type=float, default=.68, help='Label width in inches; must never exceed 0.68')
     p.add_argument('--max-width', type=float, default=None, help='Deprecated: must equal --width; automatic widening is disabled')
     p.add_argument('--height', type=float, default=.33, help='Label height in inches (0.33–10.5); barcode stays vertically centered')
+    p.add_argument('--separate-habitat', action='store_true', help='Place a smaller two-line 4-point habitat label directly below each main label')
+    p.add_argument('--habitat-height', type=float, default=.15, help='Separate habitat label height in inches (default 0.15)')
+    p.add_argument('--habitat-gap', type=float, default=.02, help='Gap between main and separate habitat label in inches (default 0.02)')
     p.add_argument('--guides', action='store_true', help='Add light cutting rectangles')
     args = p.parse_args()
     try:

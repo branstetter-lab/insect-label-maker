@@ -9,7 +9,7 @@ The tool runs locally, reads the workbook without changing it, and exports a US 
 - `label_maker.py` — main Python script.
 - `requirements.txt` — Python dependencies.
 - `label_template.json` — editable field order and punctuation.
-- `examples/` — fictional example data, PDFs for both layouts, and their reports.
+- `examples/` — fictional example data, PDFs for both layouts and separate habitat labels, and their reports.
 - `README.md` — these instructions.
 
 Send these files together. Do not copy your `.venv` folder; each user creates their own environment. Arial font files are not included. A ready-to-share copy of these files is available in `dist/insect_label_maker.zip`.
@@ -116,6 +116,9 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `--font PATH` | macOS Arial path | Regular Arial `.ttf` file. |
 | `--italic-font PATH` | macOS Arial Italic path | Matching italic `.ttf` file. |
 | `--guides` | Off | Draw light cutting rectangles. |
+| `--separate-habitat` | Off | Put macrohabitat and microhabitat on a smaller label below the main label. |
+| `--habitat-height INCHES` | `0.15` | Height of the separate habitat label. |
+| `--habitat-gap INCHES` | `0.02` | Gap between the main and separate habitat labels. |
 | `--width INCHES` | `0.68` | Label width; must be positive and never exceed 0.68 inch. |
 | `--height INCHES` | `0.33` | Label height; may be increased up to 10.5 inches within the printable page. |
 | `--max-width INCHES` | Not set | Deprecated compatibility option; must equal `--width`. It cannot permit widening. |
@@ -128,6 +131,22 @@ python label_maker.py "/path/to/specimens.xlsx" --layout flow --height 0.40 --ou
 ```
 
 The barcode and catalog number remain vertically centered, and page row counts adapt to the chosen height. A taller label can fit more wrapped lines, but it does not solve an individual text line or word that is too wide; shorten that text or use the wrapped layout. Barcode size, code font sizes, and page gaps are constants in `label_maker.py`, not command-line options. Longer catalog identifiers may require more height or a larger barcode to scan reliably.
+
+## Optional separate habitat label
+
+Add `--separate-habitat` to move habitat out of the main label. Each specimen gets a smaller label directly below its main label, with a 0.02-inch cutting gap. The two labels always stay together on the same page. This works with both `--layout lines` and `--layout flow`.
+
+```sh
+python label_maker.py "/path/to/specimens.xlsx" --template label_template.json --separate-habitat --output output/label_pairs.pdf
+```
+
+The habitat label defaults to **0.68 × 0.15 inches** (or the selected main-label width). It contains two left-aligned lines: `MacroHabitat_Label`, then `Microhabitat_Label`. The two-line block is centered vertically and always uses **4-point Arial**, at the usual 75% horizontal scale. Scientific-name italics remain on the microhabitat line. There is no barcode on the smaller label; it uses the full available width.
+
+Both habitat columns are required for this option, but values may be blank. A pair is reserved for every specimen. The program preserves both habitat values instead of applying the macrohabitat-omission fallback. If either line is too wide at 4 points, it reports the specimen and text to shorten; it does not wrap, shrink, or truncate those two lines. Increasing habitat height does not fix a line that is too wide.
+
+Use `--habitat-height 0.18` for a taller smaller label or `--habitat-gap 0.03` for more space below the main label. Both options are in inches. `--guides` draws cutting rectangles around both labels. Main-label dimensions remain unchanged. The JSON report includes each habitat label’s dimensions, text, baselines, and page/position. If using a custom template, keep habitat fields in entries containing only habitat fields so they can be removed without losing other data.
+
+See `examples/example_labels_separate_habitat.pdf` for a fictional example.
 
 ## Change displayed fields
 
@@ -148,7 +167,7 @@ Use concise fields and retain the six-entry structure for the normal layout. The
 
 ## Try the examples
 
-The example workbook contains **six fictional specimens**, including plant names, a family name, blank uncertainty, and a long habitat description. The matching PDFs demonstrate both layouts and the habitat fallback. They contain no production specimen records.
+The example workbook contains **six fictional specimens**, including plant names, a family name, blank uncertainty, and a long habitat description. The matching PDFs demonstrate both layouts, the habitat fallback, and the separate habitat label option. They contain no production specimen records.
 
 ```sh
 python label_maker.py examples/example_specimens.xlsx --template label_template.json --layout lines --output output/example_lines.pdf
