@@ -1,0 +1,167 @@
+import tempfile
+import unittest
+from pathlib import Path
+import openpyxl
+import label_maker as l
+
+
+class LabelTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        l.pdfmetrics.registerFont(l.TTFont('Arial', '/System/Library/Fonts/Supplemental/Arial.ttf'))
+        l.pdfmetrics.registerFont(l.TTFont('ArialBold', '/System/Library/Fonts/Supplemental/Arial Bold.ttf'))
+
+    def setUp(self):
+        self.previous_main_size = l.MAIN_SIZE
+        l.MAIN_SIZE = 3.5  # Legacy layout coverage; 4-point profile has its own test.
+
+    def tearDown(self):
+        l.MAIN_SIZE = self.previous_main_size
+
+    def test_barcode_roundtrip(self):
+        for code in ['BBSL1207527', 'ABC-000123']:
+            self.assertEqual(l.zxingcpp.read_barcode(l.matrix(code)).text, code)
+
+    def test_overflow_and_uncertainty(self):
+        row = {'Catalog_Number': 'BBSL1207527', 'Field_Number': 'MGB4066',
+               'Latitude': '41.91222', 'Longitude': '-111.67473', 'Uncertainty': '100'}
+        lines = ['first', 'second', '[Latitude] [Longitude]±[Uncertainty]m', 'fourth', 'fifth', 'sixth']
+        self.assertIsNone(l.layout(row, lines, l.MIN_WIDTH, True))
+        self.assertIsNotNone(l.layout(row, lines, 90, True))
+        self.assertNotIn('±', l.render_lines(row, lines, False)[2])
+        self.assertIsNone(l.layout(row, ['extra'] * 7, 90, False))
+
+    def test_fixed_size_six_line_layout(self):
+        row = {'Catalog_Number': 'BBSL1207527', 'Field_Number': 'MGB4066',
+               'Country': 'USA', 'StateProv': 'UT', 'County': 'Cache Co.',
+               'LocalityLabel': 'Naomi Peak', 'Latitude': '41.91222',
+               'Longitude': '-111.67473', 'Uncertainty': '100',
+               'Verbatim_Elevation': '3000m', 'Verbatim_Date': '22Jul2021',
+               'Collector_Label': 'M. Branstetter, T. Griswold',
+               'MacroHabitat_Label': 'rocky peak', 'Microhabitat_Label': 'Phacelia sp.'}
+        lines = l.layout(row, l.DEFAULT_LINES, l.MIN_WIDTH, False)
+        self.assertIsNotNone(lines)
+        self.assertEqual(len(lines), 6)
+        self.assertEqual(lines[4], row['Collector_Label'])
+        self.assertEqual(lines[5], 'rocky peak; Phacelia sp.')
+
+    def test_original_barcode_size_and_center(self):
+        img = l.matrix('BBSL1207527')
+        bounds = img.point(lambda p: 255 - p).getbbox()
+        dark_width = (bounds[2] - bounds[0]) * l.BAR / img.width
+        self.assertAlmostEqual(dark_width / 72, .11)
+        self.assertAlmostEqual(l.BAR_Y + l.BAR / 2, l.HEIGHT / 2)
+        self.assertGreaterEqual(bounds[0], 2)
+        self.assertGreaterEqual(img.width - bounds[2], 2)
+
+    def test_four_point_profile_and_vertical_clearance(self):
+        old_size = l.MAIN_SIZE
+        try:
+            l.MAIN_SIZE = 4
+            row = {'Catalog_Number': 'BBSL1207604', 'Field_Number': 'MGB4039',
+                   'Country': 'USA', 'StateProv': 'UT', 'County': 'Cache Co.',
+                   'LocalityLabel': 'Tony Grove', 'Latitude': '41.89973',
+                   'Longitude': '-111.64205', 'Uncertainty': '100',
+                   'Verbatim_Elevation': '2510m', 'Verbatim_Date': '9Jul2021',
+                   'Collector_Label': 'M.Branstetter, C.Meidt',
+                   'MacroHabitat_Label': 'alpine meadow', 'Microhabitat_Label': 'pan traps'}
+            lines = l.layout(row, l.DEFAULT_LINES, l.MIN_WIDTH, False)
+            self.assertIsNotNone(lines)
+            self.assertEqual(len(lines), 6)
+            self.assertEqual([l.text_size(i) for i in range(6)], [4, 4, 4, 4, 4, 3.5])
+            row['Microhabitat_Label'] = 'Geranium sp.'
+            reduced = l.layout(row, l.DEFAULT_LINES, l.MIN_WIDTH, False)
+            self.assertIsNotNone(reduced)
+            self.assertEqual(reduced[-1], 'Geranium sp.')
+            row['Microhabitat_Label'] = 'unreasonably long microhabitat ' * 20
+            self.assertIsNone(l.layout(row, l.DEFAULT_LINES, l.MIN_WIDTH, False))
+        finally:
+            l.MAIN_SIZE = old_size
+
+    def test_taxon_italics(self):
+        for text, expected in [
+            ('Phacelia sp.', ['Phacelia']),
+            ('ex Phacelia tanacetifolia (Boraginaceae)', ['Phacelia', 'tanacetifolia']),
+            ('Asteraceae sp.', []), ('Apiaceae sp.', []), ('Asteraceae', []),
+            ('pan traps', []), ('air/ground', []),
+            ('ex yellow Asteraceae', []),
+        ]:
+            self.assertEqual([text[a:b] for a, b in l.taxon_italic_ranges(text)], expected)
+        lines = ['USA: UT', 'habitat; Phacelia sp.']
+        mapped = l.label_italic_ranges(lines, 'Phacelia sp.')
+        self.assertEqual(mapped[0], [])
+        self.assertEqual([lines[1][a:b] for a, b in mapped[1]], ['Phacelia'])
+
+    def test_adaptive_collector_and_flow(self):
+        old_size, old_mode = l.MAIN_SIZE, l.LAYOUT_MODE
+        try:
+            l.MAIN_SIZE = 4
+            row = {'Catalog_Number': 'BBSL1207527', 'Field_Number': 'MGB4066',
+                   'Country': 'USA', 'StateProv': 'UT', 'County': 'Cache Co.',
+                   'LocalityLabel': 'Naomi Peak', 'Latitude': '41.91222',
+                   'Longitude': '-111.67473', 'Uncertainty': '100',
+                   'Verbatim_Elevation': '3000m', 'Verbatim_Date': '22Jul2021',
+                   'Collector_Label': 'M.Branstetter, T.Griswold',
+                   'MacroHabitat_Label': 'rocky peak', 'Microhabitat_Label': 'Phacelia sp.'}
+            l.LAYOUT_MODE = 'lines'
+            lines = l.layout(row, l.DEFAULT_LINES, l.MIN_WIDTH, False)
+            self.assertEqual(lines.sizes, [4, 4, 4, 4, 3.5, 3.5])
+            self.assertEqual(lines[4], row['Collector_Label'])
+            previous_bottom = None
+            for index, (text, size, baseline) in enumerate(zip(lines, lines.sizes, lines.baselines)):
+                above, below = l.ink_bounds(text, size)
+                if previous_bottom is not None:
+                    self.assertGreater(previous_bottom - baseline - above, 0)
+                    self.assertAlmostEqual(lines.baselines[index - 1] - baseline, l.NORMAL_LEADING)
+                previous_bottom = baseline - below
+            short_row = dict(row, Collector_Label='M.Branstetter')
+            short = l.layout(short_row, l.DEFAULT_LINES, l.MIN_WIDTH, False)
+            self.assertEqual(short.sizes[4], 4)
+            limit = l.MIN_WIDTH - 2 * l.PAD - l.SIDE - l.BAR - 1.7
+            for text, size in zip(lines, lines.sizes):
+                self.assertLessEqual(l.width(text, size), limit)
+            l.LAYOUT_MODE = 'flow'
+            flow = l.layout(row, l.DEFAULT_LINES, l.MIN_WIDTH, True)
+            self.assertIsNotNone(flow)
+            joined = ' '.join(flow)
+            boundary_width = l.MIN_WIDTH - 2 * l.PAD - l.SIDE - l.BAR - 1.7
+            for text, size in zip(flow, flow.sizes):
+                self.assertLessEqual(l.width(text, size), boundary_width)
+            for value in ['Naomi Peak', '±100m', 'M.Branstetter, T.Griswold', 'rocky peak, Phacelia sp.']:
+                self.assertIn(value, joined)
+            for text, size, baseline in zip(flow, flow.sizes, flow.baselines):
+                self.assertLessEqual(l.width(text, size), l.available_at(l.MIN_WIDTH, baseline, text, size, row['Field_Number']))
+                if 'Phacelia' in text:
+                    self.assertEqual(size, 3.5)
+        finally:
+            l.MAIN_SIZE, l.LAYOUT_MODE = old_size, old_mode
+
+    def test_condensed_coordinates_with_smaller_uncertainty(self):
+        old_size, old_mode = l.MAIN_SIZE, l.LAYOUT_MODE
+        try:
+            l.MAIN_SIZE, l.LAYOUT_MODE = 4, 'lines'
+            row = {'Latitude': '41.91222', 'Longitude': '-111.67473', 'Uncertainty': '500'}
+            text = '41.91222 -111.67473±500m'
+            runs = l.coordinate_runs(row, text, 4)
+            self.assertEqual(runs[0][1:], (4, .62))
+            self.assertEqual(runs[1], ('±500m', 3.5, .75))
+            limit = l.MIN_WIDTH - 2 * l.PAD - l.SIDE - l.BAR - 1.7
+            self.assertLessEqual(l.run_width(runs), limit)
+            row['Uncertainty'] = ''
+            self.assertEqual(len(l.coordinate_runs(row, '41.91222 -111.67473', 4)), 1)
+        finally:
+            l.MAIN_SIZE, l.LAYOUT_MODE = old_size, old_mode
+
+    def test_duplicate_ids_rejected(self):
+        with tempfile.TemporaryDirectory() as folder:
+            p = Path(folder) / 'input.xlsx'
+            wb = openpyxl.Workbook()
+            wb.active.append(['Catalog_Number'])
+            wb.active.append(['ID1'])
+            wb.active.append(['ID1'])
+            wb.save(p)
+            with self.assertRaisesRegex(ValueError, 'Duplicate Catalog_Number'):
+                l.read_rows(p)
+
+if __name__ == '__main__':
+    unittest.main()

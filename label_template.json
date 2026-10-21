@@ -1,0 +1,8 @@
+[
+  "[Country]: [StateProv], [County]",
+  "[LocalityLabel]",
+  "[Latitude] [Longitude]±[Uncertainty]m",
+  "[Verbatim_Elevation], [Verbatim_Date]",
+  "[Collector_Label]",
+  "[MacroHabitat_Label]; [Microhabitat_Label]"
+]

@@ -1,0 +1,435 @@
+{
+  "labels": 6,
+  "width_inches": 0.68,
+  "height_inches": 0.33,
+  "layout": "flow",
+  "font": "Arial",
+  "font_points": 4.0,
+  "habitat_font_points": 3.5,
+  "catalog_font_points": 3.75,
+  "field_font_points": 3.1,
+  "barcode_dark_symbol_inches": 0.11,
+  "barcode_center_y_inches": 0.165,
+  "horizontal_gap_inches": 0.02,
+  "vertical_gap_inches": 0.02,
+  "text_horizontal_scale": 0.75,
+  "barcode": "Data Matrix",
+  "macrohabitat_omitted_count": 0,
+  "uncertainty_omitted_count": 0,
+  "records": [
+    {
+      "excel_row": 2,
+      "catalog_number": "DEMO000001",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Example Meadow, 41.9",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "-111.65\u00b1100m, 2500m,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "12Jul2026, A.Smith,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "meadow, pan traps",
+            3.5,
+            0.75
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        3.5
+      ],
+      "line_baselines": [
+        20.547,
+        16.885,
+        12.995,
+        9.295,
+        6.001999999999999
+      ],
+      "lines": [
+        "USA: UT, Cache Co.,",
+        "Example Meadow, 41.9",
+        "-111.65\u00b1100m, 2500m,",
+        "12Jul2026, A.Smith,",
+        "meadow, pan traps"
+      ]
+    },
+    {
+      "excel_row": 3,
+      "catalog_number": "DEMO000002",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Example Meadow, 41.9",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "-111.65\u00b1100m, 2500m,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "12Jul2026, A.Smith,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "B.Jones,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "meadow, Phacelia sp.",
+            3.5,
+            0.75
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4,
+        3.5
+      ],
+      "line_baselines": [
+        20.547,
+        16.885,
+        12.995,
+        9.295,
+        5.643999999999999,
+        2.3510000000000004
+      ],
+      "lines": [
+        "USA: UT, Cache Co.,",
+        "Example Meadow, 41.9",
+        "-111.65\u00b1100m, 2500m,",
+        "12Jul2026, A.Smith,",
+        "B.Jones,",
+        "meadow, Phacelia sp."
+      ]
+    },
+    {
+      "excel_row": 4,
+      "catalog_number": "DEMO000003",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Example Ridge, 41.91",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "-111.66\u00b1500m, 2800m,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "13Jul2026, A.Smith,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "rocky alpine woodland,",
+            3.5,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Phacelia tanacetifolia",
+            3.5,
+            0.75
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        3.5,
+        3.5
+      ],
+      "line_baselines": [
+        20.547,
+        16.885,
+        12.948,
+        9.248,
+        5.955,
+        2.4490000000000003
+      ],
+      "lines": [
+        "USA: UT, Cache Co.,",
+        "Example Ridge, 41.91",
+        "-111.66\u00b1500m, 2800m,",
+        "13Jul2026, A.Smith,",
+        "rocky alpine woodland,",
+        "Phacelia tanacetifolia"
+      ]
+    },
+    {
+      "excel_row": 5,
+      "catalog_number": "DEMO000004",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Example Ridge, 41.91",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "-111.66\u00b1500m, 2800m,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "13Jul2026, B.Jones,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "woodland, Asteraceae",
+            3.5,
+            0.75
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        3.5
+      ],
+      "line_baselines": [
+        20.547,
+        16.885,
+        12.948,
+        9.286,
+        5.993
+      ],
+      "lines": [
+        "USA: UT, Cache Co.,",
+        "Example Ridge, 41.91",
+        "-111.66\u00b1500m, 2800m,",
+        "13Jul2026, B.Jones,",
+        "woodland, Asteraceae"
+      ]
+    },
+    {
+      "excel_row": 6,
+      "catalog_number": "DEMO000005",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Example Meadow, 41.9",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "-111.65, 2500m,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "14Jul2026, A.Smith,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "meadow, air/ground",
+            3.5,
+            0.75
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        3.5
+      ],
+      "line_baselines": [
+        20.547,
+        16.885,
+        12.995,
+        9.295,
+        5.959
+      ],
+      "lines": [
+        "USA: UT, Cache Co.,",
+        "Example Meadow, 41.9",
+        "-111.65, 2500m,",
+        "14Jul2026, A.Smith,",
+        "meadow, air/ground"
+      ]
+    },
+    {
+      "excel_row": 7,
+      "catalog_number": "DEMO000006",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Example Meadow, 41.9",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "-111.65\u00b1100m, 2500m,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "14Jul2026, B.Jones,",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "alpine meadow, Geranium",
+            3.5,
+            0.75
+          ]
+        ],
+        [
+          [
+            "sp.",
+            3.5,
+            0.75
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        3.5,
+        3.5
+      ],
+      "line_baselines": [
+        20.547,
+        16.885,
+        12.995,
+        9.333,
+        5.997,
+        3.2250000000000005
+      ],
+      "lines": [
+        "USA: UT, Cache Co.,",
+        "Example Meadow, 41.9",
+        "-111.65\u00b1100m, 2500m,",
+        "14Jul2026, B.Jones,",
+        "alpine meadow, Geranium",
+        "sp."
+      ]
+    }
+  ]
+}
