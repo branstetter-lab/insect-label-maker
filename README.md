@@ -90,7 +90,7 @@ Quote paths containing spaces. Use a different output filename for each batch: a
 
 ### Layouts and fitting
 
-Both layouts default to **0.68 × 0.33-inch labels**, with 0.02-inch horizontal/vertical gaps and 0.25-inch page margins. Labels fill down a column, then across the page, with automatic pagination.
+Both layouts default to **0.68 × 0.33-inch labels**, with 0.02-inch horizontal/vertical gaps and 0.25-inch page margins. Labels fill down a column, then across the page, with automatic pagination. **Width must never exceed 0.68 inch**: labels are inserted vertically, and this limit allows four rows in a standard unit tray. Automatic widening is disabled. Height may be increased explicitly with `--height` (default `0.33` inch).
 
 - **`lines` (default):** keeps the six template entries on separate lines. Entries 1–5 start at 4 points and individually fall back to 3.5 points if needed. Entry 6 stays at 3.5 points. The adaptive layout uses equal 3.8-point baseline spacing, independent of font size.
 - **`flow`:** joins entries with commas and wraps them into a text column. It tries 4-point text first and 3.5 points when needed; physical lines containing habitat text use 3.5 points. Wrapped lines use their own flow spacing.
@@ -116,11 +116,18 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `--font PATH` | macOS Arial path | Regular Arial `.ttf` file. |
 | `--italic-font PATH` | macOS Arial Italic path | Matching italic `.ttf` file. |
 | `--guides` | Off | Draw light cutting rectangles. |
-| `--width INCHES` | `0.68` | Starting label width. |
-| `--max-width INCHES` | `0.68` | Maximum permitted width; larger values explicitly allow widening. |
+| `--width INCHES` | `0.68` | Label width; must be positive and never exceed 0.68 inch. |
+| `--height INCHES` | `0.33` | Label height; may be increased up to 10.5 inches within the printable page. |
+| `--max-width INCHES` | Not set | Deprecated compatibility option; must equal `--width`. It cannot permit widening. |
 | `-h`, `--help` | — | Show usage. |
 
-Keep both width defaults when specimen curation requires a fixed width. To explicitly allow wider labels, supply both bounds, such as `--width 0.75 --max-width 0.85`. The height remains 0.33 inch; height, code font sizes, page gaps, and barcode geometry are constants in `label_maker.py`, not command-line options. Longer catalog identifiers may require a different layout or larger barcode to scan reliably.
+Keep the default 0.68-inch width for unit-tray compatibility. To try more vertical space without increasing width:
+
+```sh
+python label_maker.py "/path/to/specimens.xlsx" --layout flow --height 0.40 --output output/taller_labels.pdf
+```
+
+The barcode and catalog number remain vertically centered, and page row counts adapt to the chosen height. A taller label can fit more wrapped lines, but it does not solve an individual text line or word that is too wide; shorten that text or use the wrapped layout. Barcode size, code font sizes, and page gaps are constants in `label_maker.py`, not command-line options. Longer catalog identifiers may require more height or a larger barcode to scan reliably.
 
 ## Change displayed fields
 
@@ -154,7 +161,7 @@ Compare your output with `examples/example_labels_lines.pdf` and `examples/examp
 
 Print at **100% / Actual Size**, with “Fit to page” disabled. Use normal/high quality, preferably 600 dpi or higher, with draft/toner-saving mode off. Measure a label and scan several printed barcodes on the intended paper before printing a large batch.
 
-- **Cannot fit:** inspect the reported row, shorten label-specific wording, remove unnecessary plant-family names, or try `--layout flow`. Keep the fixed width if required for curation.
+- **Cannot fit:** inspect the reported row, shorten label-specific wording, remove unnecessary plant-family names, or try `--layout flow`. Width is capped at 0.68 inch for curation. If appropriate, try a taller label with `--height 0.40`.
 - **Unknown template field:** check capitalization and header spelling; use one of the documented aliases where appropriate.
 - **Missing font:** provide the regular and italic Arial paths explicitly.
 - **Dates or formulas look wrong:** check cell types and save recalculated formula values in Excel.

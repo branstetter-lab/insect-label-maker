@@ -152,6 +152,25 @@ class LabelTests(unittest.TestCase):
         finally:
             l.MAIN_SIZE, l.LAYOUT_MODE = old_size, old_mode
 
+    def test_width_limit_and_variable_height(self):
+        old_height, old_bar_y = l.HEIGHT, l.BAR_Y
+        try:
+            for width in [.681, .75, 1, 0, -1, float('nan'), float('inf')]:
+                with self.assertRaisesRegex(ValueError, 'width'):
+                    l.configure_dimensions(width, .33)
+            with self.assertRaisesRegex(ValueError, 'widening'):
+                l.configure_dimensions(.68, .33, .7)
+            for height in [.32, 11, float('nan')]:
+                with self.assertRaisesRegex(ValueError, 'height'):
+                    l.configure_dimensions(.68, height)
+            l.configure_dimensions(.68, .4)
+            self.assertAlmostEqual(l.HEIGHT, 28.8)
+            self.assertAlmostEqual(l.BAR_Y + l.BAR / 2, l.HEIGHT / 2)
+            l.configure_dimensions(.68, .33, .68)
+            self.assertAlmostEqual(l.HEIGHT, 23.76)
+        finally:
+            l.HEIGHT, l.BAR_Y = old_height, old_bar_y
+
     def test_duplicate_ids_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             p = Path(folder) / 'input.xlsx'

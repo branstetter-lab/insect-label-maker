@@ -15,7 +15,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 HEIGHT = .33 * 72
-MIN_WIDTH = .68 * 72
+MAX_WIDTH_INCHES = .68
+MIN_WIDTH = MAX_WIDTH_INCHES * 72  # Default width retained for API compatibility.
 SIZE = 3.5
 MAIN_SIZE = 4.0
 LAYOUT_MODE = "lines"
@@ -238,7 +239,7 @@ def flow_layout(row, templates, label_width, uncertainty):
     def fit(start, top_milli, depth):
         if start == len(words):
             return (), (), ()
-        if depth >= 7:
+        if depth >= max(7, int(HEIGHT / 3)):
             return None
         top = top_milli / 1000
         for size in ([4, 3.5] if MAIN_SIZE == 4 else [3.5]):
@@ -372,8 +373,21 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
     draw_text(pdf, bx + BAR, y + EVENT_Y, row.get('Field_Number', ''), right=True, size=FIELD_SIZE)
 
 
+def configure_dimensions(width_inches, height_inches, max_width=None):
+    global HEIGHT, BAR_Y
+    if not math.isfinite(width_inches) or not 0 < width_inches <= MAX_WIDTH_INCHES:
+        raise ValueError('Label width must be greater than 0 and never exceed 0.68 inches (four-row unit-tray limit).')
+    if max_width is not None and (not math.isfinite(max_width) or max_width != width_inches):
+        raise ValueError('--max-width no longer allows widening; omit it or set it equal to --width (at most 0.68 inches).')
+    if not math.isfinite(height_inches) or not .33 <= height_inches <= 10.5:
+        raise ValueError('Label height must be between 0.33 and 10.5 inches, within a Letter page.')
+    HEIGHT = height_inches * 72
+    BAR_Y = (HEIGHT - BAR) / 2
+
+
 def generate(args):
     global MAIN_SIZE, FONT_PATH, LAYOUT_MODE
+    configure_dimensions(args.width, args.height, args.max_width)
     MAIN_SIZE = args.main_size
     LAYOUT_MODE = args.layout
     FONT_PATH = args.font
@@ -394,23 +408,10 @@ def generate(args):
     templates = json.loads(Path(args.template).read_text()) if args.template else DEFAULT_LINES
     if not isinstance(templates, list) or not templates or not all(isinstance(t, str) for t in templates):
         raise ValueError('Template must be a JSON list of line strings.')
-    selected = []
+    common_width = args.width * 72
     for row in rows:
-        found = None
-        # Prefer the requested width, first with uncertainty, then without it.
-        for w in range(math.ceil(args.width * 7200), math.floor(args.max_width * 7200) + 1, 72):
-            label_width = w / 100
-            for uncertainty in (True, False):
-                lines = layout(row, templates, label_width, uncertainty)
-                if lines is not None:
-                    found = (label_width, uncertainty, lines)
-                    break
-            if found:
-                break
-        if found is None:
-            raise ValueError(f"Excel row {row['_excel_row']} ({row['Catalog_Number']}) cannot fit at {MAIN_SIZE:g} pt main / 3.5 pt habitat within {args.max_width} inches. Edit its label fields or raise --max-width.")
-        selected.append(found)
-    common_width = max(t[0] for t in selected)
+        if not any(layout(row, templates, common_width, uncertainty) is not None for uncertainty in (True, False)):
+            raise ValueError(f"Excel row {row['_excel_row']} ({row['Catalog_Number']}) cannot fit at {MAIN_SIZE:g} pt main / 3.5 pt habitat within {args.width:g} × {args.height:g} inches. Shorten label fields, try --layout flow, or increase --height. Width cannot exceed 0.68 inches.")
     # Use one consistent cutting grid and restore uncertainty wherever it now fits.
     plans = []
     for row in rows:
@@ -445,14 +446,14 @@ def generate(args):
                        'line_font_points': lines.sizes, 'line_baselines': lines.baselines, 'lines': lines})
     pdf.save()
     temp.replace(output)
-    summary = {'labels': len(rows), 'width_inches': common_width / 72, 'height_inches': .33,
+    summary = {'labels': len(rows), 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
                'layout': LAYOUT_MODE, 'font': 'Arial', 'font_points': MAIN_SIZE, 'habitat_font_points': SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
                'barcode_dark_symbol_inches': 0.11, 'barcode_center_y_inches': HEIGHT / 144,
                'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'barcode': 'Data Matrix',
                'macrohabitat_omitted_count': sum(r['macrohabitat_omitted'] for r in report),
                'uncertainty_omitted_count': sum(r['uncertainty_omitted'] for r in report), 'records': report}
     output.with_suffix('.json').write_text(json.dumps(summary, indent=2))
-    print(f"Created {output}: {len(rows)} labels, {common_width / 72:.2f} × 0.33 in, Arial {MAIN_SIZE:g} pt main / 3.5 pt habitat.")
+    print(f"Created {output}: {len(rows)} labels, {common_width / 72:.2f} × {HEIGHT / 72:.2f} in, Arial {MAIN_SIZE:g} pt main / 3.5 pt habitat.")
     print(f"Macrohabitat omitted on {summary['macrohabitat_omitted_count']} labels.")
     print(f"Uncertainty omitted on {summary['uncertainty_omitted_count']} labels. Review {output.with_suffix('.json')}.")
 
@@ -467,12 +468,11 @@ def main():
     p.add_argument('--main-size', type=float, choices=[3.5, 4.0], default=4.0, help='Font size for the first five physical text lines')
     p.add_argument('--template', help='JSON list of lines with [Excel_Column] placeholders')
     p.add_argument('--font', default='/System/Library/Fonts/Supplemental/Arial.ttf')
-    p.add_argument('--width', type=float, default=.68, help='Starting width in inches')
-    p.add_argument('--max-width', type=float, default=.68, help='Maximum width in inches (raise explicitly to allow widening)')
+    p.add_argument('--width', type=float, default=.68, help='Label width in inches; must never exceed 0.68')
+    p.add_argument('--max-width', type=float, default=None, help='Deprecated: must equal --width; automatic widening is disabled')
+    p.add_argument('--height', type=float, default=.33, help='Label height in inches (0.33–10.5); barcode stays vertically centered')
     p.add_argument('--guides', action='store_true', help='Add light cutting rectangles')
     args = p.parse_args()
-    if not MIN_WIDTH / 72 <= args.width <= args.max_width <= 8:
-        p.error('Widths must satisfy 0.68 <= width <= max-width <= 8 inches.')
     try:
         generate(args)
     except (ValueError, KeyError, OSError) as exc:
