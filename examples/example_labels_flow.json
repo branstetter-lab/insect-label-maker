@@ -1,5 +1,11 @@
 {
   "labels": 6,
+  "separate_habitat": false,
+  "physical_labels": 6,
+  "habitat_label_width_inches": null,
+  "habitat_max_lines": null,
+  "habitat_label_height_inches": null,
+  "habitat_label_gap_inches": null,
   "width_inches": 0.68,
   "height_inches": 0.33,
   "layout": "flow",
@@ -79,7 +85,8 @@
         "-111.65\u00b1100m, 2500m,",
         "12Jul2026, A.Smith,",
         "meadow, pan traps"
-      ]
+      ],
+      "habitat_label": null
     },
     {
       "excel_row": 3,
@@ -153,7 +160,8 @@
         "12Jul2026, A.Smith,",
         "B.Jones,",
         "meadow, Phacelia sp."
-      ]
+      ],
+      "habitat_label": null
     },
     {
       "excel_row": 4,
@@ -227,7 +235,8 @@
         "13Jul2026, A.Smith,",
         "rocky alpine woodland,",
         "Phacelia tanacetifolia"
-      ]
+      ],
+      "habitat_label": null
     },
     {
       "excel_row": 5,
@@ -291,7 +300,8 @@
         "-111.66\u00b1500m, 2800m,",
         "13Jul2026, B.Jones,",
         "woodland, Asteraceae"
-      ]
+      ],
+      "habitat_label": null
     },
     {
       "excel_row": 6,
@@ -355,7 +365,8 @@
         "-111.65, 2500m,",
         "14Jul2026, A.Smith,",
         "meadow, air/ground"
-      ]
+      ],
+      "habitat_label": null
     },
     {
       "excel_row": 7,
@@ -393,14 +404,14 @@
         ],
         [
           [
-            "alpine meadow, Geranium",
+            "rocky slope beside alpine",
             3.5,
             0.75
           ]
         ],
         [
           [
-            "sp.",
+            "woodland, Geranium sp.",
             3.5,
             0.75
           ]
@@ -419,17 +430,18 @@
         16.885,
         12.995,
         9.333,
-        5.997,
-        3.2250000000000005
+        6.039999999999999,
+        2.5340000000000003
       ],
       "lines": [
         "USA: UT, Cache Co.,",
         "Example Meadow, 41.9",
         "-111.65\u00b1100m, 2500m,",
         "14Jul2026, B.Jones,",
-        "alpine meadow, Geranium",
-        "sp."
-      ]
+        "rocky slope beside alpine",
+        "woodland, Geranium sp."
+      ],
+      "habitat_label": null
     }
   ]
 }

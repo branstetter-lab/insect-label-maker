@@ -191,8 +191,26 @@ class LabelTests(unittest.TestCase):
         self.assertAlmostEqual(plan['baselines'][0] + above,
                                height - (plan['baselines'][1] - below))
         row['Microhabitat_Label'] = 'far too much habitat information ' * 10
-        with self.assertRaisesRegex(ValueError, 'one line at 4 pt'):
+        with self.assertRaisesRegex(ValueError, 'maximum is 3'):
             l.habitat_label_plan(row, l.MIN_WIDTH, height)
+
+    def test_three_line_habitat_wrapping_and_italics(self):
+        row = {'_excel_row': 2, 'Catalog_Number': 'DEMO000001',
+               'MacroHabitat_Label': 'rocky slope beside alpine woodland',
+               'Microhabitat_Label': 'Phacelia sp.'}
+        plan = l.habitat_label_plan(row, .62 * 72, .2 * 72)
+        self.assertEqual(len(plan['lines']), 3)
+        self.assertEqual(plan['line_sources'], ['macrohabitat', 'macrohabitat', 'microhabitat'])
+        self.assertEqual(' '.join(plan['lines']), row['MacroHabitat_Label'] + ' ' + row['Microhabitat_Label'])
+        self.assertEqual(plan['lines'][2][slice(*plan['italic_ranges'][2][0])], 'Phacelia')
+        self.assertEqual(plan['font_points'], 4)
+        self.assertLess(plan['width_inches'], .68)
+        with self.assertRaisesRegex(ValueError, 'maximum is 2'):
+            l.habitat_label_plan(row, .62 * 72, .2 * 72, 2)
+        with self.assertRaisesRegex(ValueError, 'too short'):
+            l.habitat_label_plan(row, .62 * 72, .15 * 72)
+        for text in plan['lines']:
+            self.assertLessEqual(l.width(text, 4), .62 * 72 - 2 * l.PAD - .3)
 
     def test_separate_habitat_pairs_across_pages(self):
         from pypdf import PdfReader
@@ -217,8 +235,10 @@ class LabelTests(unittest.TestCase):
             self.assertEqual(report['physical_labels'], 442)
             self.assertEqual(report['habitat_font_points'], 4)
             self.assertEqual(len(PdfReader(output).pages), 2)
-            self.assertEqual(report['records'][219]['habitat_label']['page'], 1)
-            self.assertEqual(report['records'][220]['habitat_label']['page'], 2)
+            capacity = int((792 - 36 + l.PAGE_GAP) // ((.33 + .02 + .20) * 72 + l.PAGE_GAP)) * 11
+            self.assertEqual(report['records'][capacity - 1]['habitat_label']['page'], 1)
+            self.assertEqual(report['records'][capacity]['habitat_label']['page'], 2)
+            self.assertEqual(report['habitat_label_width_inches'], .62)
             for record in report['records']:
                 self.assertEqual(len(record['lines']), 5)
                 plan = record['habitat_label']

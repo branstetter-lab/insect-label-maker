@@ -2,7 +2,9 @@
   "labels": 6,
   "separate_habitat": true,
   "physical_labels": 12,
-  "habitat_label_height_inches": 0.15,
+  "habitat_label_width_inches": 0.62,
+  "habitat_max_lines": 3,
+  "habitat_label_height_inches": 0.2,
   "habitat_label_gap_inches": 0.02,
   "width_inches": 0.68,
   "height_inches": 0.33,
@@ -94,16 +96,24 @@
           "meadow",
           "pan traps"
         ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          []
+        ],
         "font_points": 4,
         "baselines": [
-          6.665499999999999,
-          2.0654999999999992
+          8.465499999999999,
+          3.865499999999999
         ],
-        "height_inches": 0.15,
-        "width_inches": 0.68,
+        "height_inches": 0.2,
+        "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 738.0
+        "y_points": 734.4
       }
     },
     {
@@ -179,16 +189,29 @@
           "meadow",
           "Phacelia sp."
         ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          [
+            [
+              0,
+              8
+            ]
+          ]
+        ],
         "font_points": 4,
         "baselines": [
-          6.665499999999999,
-          2.0654999999999992
+          8.465499999999999,
+          3.865499999999999
         ],
-        "height_inches": 0.15,
-        "width_inches": 0.68,
+        "height_inches": 0.2,
+        "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 700.56
+        "y_points": 693.36
       }
     },
     {
@@ -264,16 +287,33 @@
           "rocky alpine woodland",
           "Phacelia tanacetifolia"
         ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          [
+            [
+              0,
+              8
+            ],
+            [
+              9,
+              22
+            ]
+          ]
+        ],
         "font_points": 4,
         "baselines": [
-          6.2915,
-          1.6915000000000004
+          8.0915,
+          3.4915000000000003
         ],
-        "height_inches": 0.15,
-        "width_inches": 0.68,
+        "height_inches": 0.2,
+        "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 663.12
+        "y_points": 652.3199999999999
       }
     },
     {
@@ -349,16 +389,24 @@
           "woodland",
           "Asteraceae"
         ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          []
+        ],
         "font_points": 4,
         "baselines": [
-          6.2915,
-          1.6915000000000004
+          8.0915,
+          3.4915000000000003
         ],
-        "height_inches": 0.15,
-        "width_inches": 0.68,
+        "height_inches": 0.2,
+        "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 625.6800000000001
+        "y_points": 611.28
       }
     },
     {
@@ -429,16 +477,24 @@
           "meadow",
           "air/ground"
         ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          []
+        ],
         "font_points": 4,
         "baselines": [
-          6.688999999999999,
-          2.0889999999999995
+          8.489,
+          3.889000000000001
         ],
-        "height_inches": 0.15,
-        "width_inches": 0.68,
+        "height_inches": 0.2,
+        "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 588.24
+        "y_points": 570.24
       }
     },
     {
@@ -511,19 +567,36 @@
       ],
       "habitat_label": {
         "lines": [
-          "alpine meadow",
+          "rocky slope beside alpine",
+          "woodland",
           "Geranium sp."
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          [],
+          [
+            [
+              0,
+              8
+            ]
+          ]
         ],
         "font_points": 4,
         "baselines": [
-          6.665499999999999,
-          2.0654999999999992
+          10.7655,
+          6.1655,
+          1.5655000000000001
         ],
-        "height_inches": 0.15,
-        "width_inches": 0.68,
+        "height_inches": 0.2,
+        "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 550.8
+        "y_points": 529.1999999999999
       }
     }
   ]

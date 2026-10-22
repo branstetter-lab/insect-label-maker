@@ -117,7 +117,9 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `--italic-font PATH` | macOS Arial Italic path | Matching italic `.ttf` file. |
 | `--guides` | Off | Draw light cutting rectangles. |
 | `--separate-habitat` | Off | Put macrohabitat and microhabitat on a smaller label below the main label. |
-| `--habitat-height INCHES` | `0.15` | Height of the separate habitat label. |
+| `--habitat-height INCHES` | `0.20` | Height of the separate habitat label. |
+| `--habitat-width INCHES` | `0.62` | Width of the smaller habitat label; must be less than the main width. |
+| `--habitat-max-lines 2\|3` | `3` | Maximum physical lines on the habitat label. |
 | `--habitat-gap INCHES` | `0.02` | Gap between the main and separate habitat labels. |
 | `--width INCHES` | `0.68` | Label width; must be positive and never exceed 0.68 inch. |
 | `--height INCHES` | `0.33` | Label height; may be increased up to 10.5 inches within the printable page. |
@@ -140,11 +142,11 @@ Add `--separate-habitat` to move habitat out of the main label. Each specimen ge
 python label_maker.py "/path/to/specimens.xlsx" --template label_template.json --separate-habitat --output output/label_pairs.pdf
 ```
 
-The habitat label defaults to **0.68 × 0.15 inches** (or the selected main-label width). It contains two left-aligned lines: `MacroHabitat_Label`, then `Microhabitat_Label`. The two-line block is centered vertically and always uses **4-point Arial**, at the usual 75% horizontal scale. Scientific-name italics remain on the microhabitat line. There is no barcode on the smaller label; it uses the full available width.
+The habitat label defaults to **0.62 × 0.20 inches**, narrower than the main label. It contains `MacroHabitat_Label`, then `Microhabitat_Label`, in separate left-aligned blocks. Either field may wrap, up to **three physical lines total**. The full text block is centered vertically and always uses **4-point Arial**, at the usual 75% horizontal scale. Scientific-name italics remain on the microhabitat line. There is no barcode on the smaller label; it uses the full available width.
 
-Both habitat columns are required for this option, but values may be blank. A pair is reserved for every specimen. The program preserves both habitat values instead of applying the macrohabitat-omission fallback. If either line is too wide at 4 points, it reports the specimen and text to shorten; it does not wrap, shrink, or truncate those two lines. Increasing habitat height does not fix a line that is too wide.
+Both habitat columns are required for this option, but values may be blank. A pair is reserved for every specimen. The program preserves both habitat values instead of applying the macrohabitat-omission fallback. The program wraps at word boundaries without shrinking or truncating text. It reports an error if a word is too wide, the text needs more than the selected maximum of two or three lines, or the chosen height cannot accommodate those lines.
 
-Use `--habitat-height 0.18` for a taller smaller label or `--habitat-gap 0.03` for more space below the main label. Both options are in inches. `--guides` draws cutting rectangles around both labels. Main-label dimensions remain unchanged. The JSON report includes each habitat label’s dimensions, text, baselines, and page/position. If using a custom template, keep habitat fields in entries containing only habitat fields so they can be removed without losing other data.
+Use `--habitat-height 0.22` for a taller habitat label or `--habitat-gap 0.03` for more space below the main label. `--habitat-width 0.60` narrows the label further. `--habitat-max-lines 2 --habitat-height 0.15` restores a compact two-line format when the text fits. Both options are in inches. `--guides` draws cutting rectangles around both labels. Main-label dimensions remain unchanged. The JSON report includes each habitat label’s dimensions, text, baselines, and page/position. If using a custom template, keep habitat fields in entries containing only habitat fields so they can be removed without losing other data.
 
 See `examples/example_labels_separate_habitat.pdf` for a fictional example.
 
@@ -187,3 +189,7 @@ Print at **100% / Actual Size**, with “Fit to page” disabled. Use normal/hig
 - **Leading zeros disappeared:** store identifiers as text in the workbook.
 
 Each barcode is digitally decoded before export. This verifies its encoded content; physical print-and-scan testing checks the printer, paper, and scanner together.
+
+## Double-sided printing
+
+The tool currently exports single-sided PDFs. See [the research note](docs/double_sided_labels.md) for published guidance, practitioner discussion, and considerations for a future duplicate-on-back experiment.
