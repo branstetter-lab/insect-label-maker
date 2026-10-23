@@ -26,7 +26,8 @@ CATALOG_SIZE = 3.75
 FIELD_SIZE = 4.0
 FIELD_FONT = "Arial"
 FIELD_SCALE = .60
-FIELD_LEFT_SHIFT = .2
+FIELD_LEFT_SHIFT = 0.0
+HABITAT_FIELD_GAP = 1.5
 HEADING_HEIGHT = 8.0
 CATALOG_PAD = .3
 PAGE_GAP = .02 * 72
@@ -238,6 +239,14 @@ def available_at(label_width, baseline, text, size, field_number):
     return available - BAR - 1.7
 
 
+def habitat_available(label_width, field_number):
+    boundary = label_width - 2 * PAD - SIDE - BAR - 1.7
+    if not field_number:
+        return boundary
+    field_left = label_width - PAD - SIDE - field_width(field_number) - FIELD_LEFT_SHIFT
+    return min(boundary, field_left - HABITAT_FIELD_GAP - PAD)
+
+
 def flow_layout(row, templates, label_width, uncertainty):
     rendered = render_lines(row, templates, uncertainty)
     # Tag habitat words so any physical line containing them stays at 3.5 pt.
@@ -269,6 +278,8 @@ def flow_layout(row, templates, label_width, uncertainty):
                 if baseline - below < .2:
                     break
                 available = available_at(label_width, baseline, text, size, row.get('Field_Number', ''))
+                if any(is_habitat for _, is_habitat in words[start:end]):
+                    available = min(available, habitat_available(label_width, row.get('Field_Number', '')))
                 if fit_width(text, size) <= available:
                     candidates.append((end, text, baseline, below))
             for end, text, baseline, below in reversed(candidates):
@@ -291,12 +302,14 @@ def _layout(row, templates, label_width, uncertainty):
     if MAIN_SIZE == 3.5:
         # Preserve the previously printed 3.5-point profile.
         result = []
-        for line in render_lines(row, templates, uncertainty):
+        for source_index, line in enumerate(render_lines(row, templates, uncertainty)):
             words = line.split()
             if not words:
                 result.append('')
             while words:
                 available = line_available(len(result), label_width, line, row.get('Field_Number', ''))
+                if source_index >= 5:
+                    available = min(available, habitat_available(label_width, row.get('Field_Number', '')))
                 current = ''
                 while words and width((current + ' ' + words[0]).strip()) <= available:
                     current = (current + ' ' + words.pop(0)).strip()
@@ -314,6 +327,8 @@ def _layout(row, templates, label_width, uncertainty):
             above, below = ink_bounds(line, size)
             baseline = text_baseline(i)
             available = available_at(label_width, baseline, line, size, row.get('Field_Number', ''))
+            if i >= 5:
+                available = min(available, habitat_available(label_width, row.get('Field_Number', '')))
             if ((fit_width(line, size) if i >= 5 else run_width(coordinate_runs(row, line, size))) <= available and baseline + above <= previous_bottom + .001
                     and baseline - below >= .1):
                 chosen = size
@@ -646,7 +661,7 @@ def generate(args):
                'habitat_label_height_inches': args.habitat_height if args.separate_habitat else None,
                'habitat_label_gap_inches': args.habitat_gap if args.separate_habitat else None, 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
                'field_headings': not args.no_field_headings, 'field_font_path': str(field_path),
-               'field_font_horizontal_scale': FIELD_SCALE, 'field_left_shift_points': FIELD_LEFT_SHIFT, 'layout': LAYOUT_MODE, 'font': pdfmetrics.getFont('LabelRegular').face.familyName.decode('utf-8', errors='replace'), 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
+               'field_font_horizontal_scale': FIELD_SCALE, 'field_left_shift_points': FIELD_LEFT_SHIFT, 'habitat_field_gap_points': HABITAT_FIELD_GAP, 'layout': LAYOUT_MODE, 'font': pdfmetrics.getFont('LabelRegular').face.familyName.decode('utf-8', errors='replace'), 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
                'barcode_dark_symbol_inches': 0.11, 'barcode_center_y_inches': HEIGHT / 144,
                'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'coordinate_horizontal_scale': COORDINATE_SCALE, 'barcode': 'Data Matrix',
                'macrohabitat_omitted_count': sum(r['macrohabitat_omitted'] for r in report),

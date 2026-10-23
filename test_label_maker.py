@@ -325,6 +325,16 @@ class LabelTests(unittest.TestCase):
         self.assertAlmostEqual(side, plan['side_width'])
         self.assertLess(plan['dash_size'], plan['size'])
 
+    def test_habitat_clearance_from_field_number(self):
+        self.assertEqual(l.FIELD_LEFT_SHIFT, 0)
+        self.assertEqual(l.HABITAT_FIELD_GAP, 1.5)
+        for code in ['MGB4066', 'EVT001']:
+            available = l.habitat_available(l.MIN_WIDTH, code)
+            field_left = l.MIN_WIDTH - l.PAD - l.SIDE - l.field_width(code) - l.FIELD_LEFT_SHIFT
+            self.assertGreaterEqual(field_left - (l.PAD + available), l.HABITAT_FIELD_GAP - 1e-9)
+            self.assertLessEqual(available, l.line_available(5, l.MIN_WIDTH))
+        self.assertEqual(l.habitat_available(l.MIN_WIDTH, ''), l.line_available(5, l.MIN_WIDTH))
+
     def test_duplicate_ids_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             p = Path(folder) / 'input.xlsx'
