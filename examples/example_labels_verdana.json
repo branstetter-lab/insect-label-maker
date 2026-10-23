@@ -1,0 +1,667 @@
+{
+  "labels": 6,
+  "separate_habitat": true,
+  "physical_labels": 12,
+  "habitat_label_width_inches": 0.62,
+  "habitat_max_lines": 3,
+  "habitat_label_height_inches": 0.2,
+  "habitat_label_gap_inches": 0.02,
+  "width_inches": 0.68,
+  "height_inches": 0.33,
+  "field_headings": true,
+  "field_font_path": "/System/Library/Fonts/Supplemental/Verdana.ttf",
+  "field_font_horizontal_scale": 0.6,
+  "layout": "lines",
+  "font": "Verdana",
+  "font_points": 4.0,
+  "habitat_font_points": 4,
+  "catalog_font_points": 3.75,
+  "field_font_points": 4.0,
+  "barcode_dark_symbol_inches": 0.11,
+  "barcode_center_y_inches": 0.165,
+  "horizontal_gap_inches": 0.02,
+  "vertical_gap_inches": 0.02,
+  "text_horizontal_scale": 0.7,
+  "coordinate_horizontal_scale": 0.49,
+  "barcode": "Data Matrix",
+  "macrohabitat_omitted_count": 0,
+  "uncertainty_omitted_count": 0,
+  "records": [
+    {
+      "excel_row": 2,
+      "catalog_number": "DEMO000001",
+      "field_number": "EVT001",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "Example Meadow",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "41.9 -111.65",
+            4,
+            0.49
+          ],
+          [
+            "\u00b1100m",
+            3.5,
+            0.7
+          ]
+        ],
+        [
+          [
+            "2500m, 12Jul2026",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "A.Smith",
+            4,
+            0.7
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "line_baselines": [
+        20.40140625,
+        16.60140625,
+        12.801406250000001,
+        9.001406250000002,
+        5.201406250000002
+      ],
+      "lines": [
+        "USA: UT, Cache Co.",
+        "Example Meadow",
+        "41.9 -111.65\u00b1100m",
+        "2500m, 12Jul2026",
+        "A.Smith"
+      ],
+      "habitat_label": {
+        "lines": [
+          "meadow",
+          "pan traps"
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          []
+        ],
+        "font_points": 4,
+        "baselines": [
+          8.383000000000001,
+          3.7830000000000013
+        ],
+        "height_inches": 0.2,
+        "width_inches": 0.62,
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 726.4
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 742.24,
+        "heading": {
+          "text": "---- EVT001 ----",
+          "field_number": "EVT001",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 769
+        }
+      }
+    },
+    {
+      "excel_row": 3,
+      "catalog_number": "DEMO000002",
+      "field_number": "EVT001",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "Example Meadow",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "41.9 -111.65",
+            4,
+            0.49
+          ],
+          [
+            "\u00b1100m",
+            3.5,
+            0.7
+          ]
+        ],
+        [
+          [
+            "2500m, 12Jul2026",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "A.Smith, B.Jones",
+            4,
+            0.7
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "line_baselines": [
+        20.40140625,
+        16.60140625,
+        12.801406250000001,
+        9.001406250000002,
+        5.201406250000002
+      ],
+      "lines": [
+        "USA: UT, Cache Co.",
+        "Example Meadow",
+        "41.9 -111.65\u00b1100m",
+        "2500m, 12Jul2026",
+        "A.Smith, B.Jones"
+      ],
+      "habitat_label": {
+        "lines": [
+          "meadow",
+          "Phacelia sp."
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          [
+            [
+              0,
+              8
+            ]
+          ]
+        ],
+        "font_points": 4,
+        "baselines": [
+          8.383000000000001,
+          3.7830000000000013
+        ],
+        "height_inches": 0.2,
+        "width_inches": 0.62,
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 685.36
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 701.2,
+        "heading": null
+      }
+    },
+    {
+      "excel_row": 4,
+      "catalog_number": "DEMO000003",
+      "field_number": "EVT002",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "Example Ridge",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "41.91 -111.66",
+            4,
+            0.49
+          ],
+          [
+            "\u00b1500m",
+            3.5,
+            0.7
+          ]
+        ],
+        [
+          [
+            "2800m, 13Jul2026",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "A.Smith",
+            4,
+            0.7
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "line_baselines": [
+        20.40140625,
+        16.60140625,
+        12.801406250000001,
+        9.001406250000002,
+        5.201406250000002
+      ],
+      "lines": [
+        "USA: UT, Cache Co.",
+        "Example Ridge",
+        "41.91 -111.66\u00b1500m",
+        "2800m, 13Jul2026",
+        "A.Smith"
+      ],
+      "habitat_label": {
+        "lines": [
+          "rocky alpine woodland",
+          "Phacelia tanacetifolia"
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          [
+            [
+              0,
+              8
+            ],
+            [
+              9,
+              22
+            ]
+          ]
+        ],
+        "font_points": 4,
+        "baselines": [
+          8.011000000000001,
+          3.4110000000000014
+        ],
+        "height_inches": 0.2,
+        "width_inches": 0.62,
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 636.32
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 652.1600000000001,
+        "heading": {
+          "text": "---- EVT002 ----",
+          "field_number": "EVT002",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 678.9200000000001
+        }
+      }
+    },
+    {
+      "excel_row": 5,
+      "catalog_number": "DEMO000004",
+      "field_number": "EVT002",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "Example Ridge",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "41.91 -111.66",
+            4,
+            0.49
+          ],
+          [
+            "\u00b1500m",
+            3.5,
+            0.7
+          ]
+        ],
+        [
+          [
+            "2800m, 13Jul2026",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "B.Jones",
+            4,
+            0.7
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "line_baselines": [
+        20.40140625,
+        16.60140625,
+        12.801406250000001,
+        9.001406250000002,
+        5.201406250000002
+      ],
+      "lines": [
+        "USA: UT, Cache Co.",
+        "Example Ridge",
+        "41.91 -111.66\u00b1500m",
+        "2800m, 13Jul2026",
+        "B.Jones"
+      ],
+      "habitat_label": {
+        "lines": [
+          "woodland",
+          "Asteraceae"
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          []
+        ],
+        "font_points": 4,
+        "baselines": [
+          8.011000000000001,
+          3.4110000000000014
+        ],
+        "height_inches": 0.2,
+        "width_inches": 0.62,
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 595.2800000000001
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 611.1200000000001,
+        "heading": null
+      }
+    },
+    {
+      "excel_row": 6,
+      "catalog_number": "DEMO000005",
+      "field_number": "EVT003",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "Example Meadow",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "41.9 -111.65",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "2500m, 14Jul2026",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "A.Smith",
+            4,
+            0.7
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "line_baselines": [
+        20.40140625,
+        16.60140625,
+        12.801406250000001,
+        9.001406250000002,
+        5.201406250000002
+      ],
+      "lines": [
+        "USA: UT, Cache Co.",
+        "Example Meadow",
+        "41.9 -111.65",
+        "2500m, 14Jul2026",
+        "A.Smith"
+      ],
+      "habitat_label": {
+        "lines": [
+          "meadow",
+          "air/ground"
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          []
+        ],
+        "font_points": 4,
+        "baselines": [
+          8.393500000000001,
+          3.7935000000000016
+        ],
+        "height_inches": 0.2,
+        "width_inches": 0.62,
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 546.2400000000001
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 562.0800000000002,
+        "heading": {
+          "text": "---- EVT003 ----",
+          "field_number": "EVT003",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 588.8400000000001
+        }
+      }
+    },
+    {
+      "excel_row": 7,
+      "catalog_number": "DEMO000006",
+      "field_number": "EVT003",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": false,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "Example Meadow",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "41.9 -111.65",
+            4,
+            0.49
+          ],
+          [
+            "\u00b1100m",
+            3.5,
+            0.7
+          ]
+        ],
+        [
+          [
+            "2500m, 14Jul2026",
+            4,
+            0.7
+          ]
+        ],
+        [
+          [
+            "B.Jones",
+            4,
+            0.7
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "line_baselines": [
+        20.40140625,
+        16.60140625,
+        12.801406250000001,
+        9.001406250000002,
+        5.201406250000002
+      ],
+      "lines": [
+        "USA: UT, Cache Co.",
+        "Example Meadow",
+        "41.9 -111.65\u00b1100m",
+        "2500m, 14Jul2026",
+        "B.Jones"
+      ],
+      "habitat_label": {
+        "lines": [
+          "rocky slope beside alpine",
+          "woodland",
+          "Geranium sp."
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "macrohabitat",
+          "microhabitat"
+        ],
+        "italic_ranges": [
+          [],
+          [],
+          [
+            [
+              0,
+              8
+            ]
+          ]
+        ],
+        "font_points": 4,
+        "baselines": [
+          10.683,
+          6.083,
+          1.4830000000000005
+        ],
+        "height_inches": 0.2,
+        "width_inches": 0.62,
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 505.20000000000016
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 521.0400000000002,
+        "heading": null
+      }
+    }
+  ]
+}

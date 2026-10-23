@@ -30,6 +30,7 @@ HEADING_HEIGHT = 8.0
 CATALOG_PAD = .3
 PAGE_GAP = .02 * 72
 TEXT_SCALE = .75  # condensed text; font height remains unchanged
+COORDINATE_SCALE = .62
 PAD = .5
 BAR = 7.92 * 18 / 14  # original 0.11-inch dark symbol plus two quiet modules per edge
 SIDE = 4.43
@@ -99,7 +100,12 @@ def render_lines(row, templates, uncertainty=True):
 
 
 def width(text, size=SIZE):
-    return pdfmetrics.stringWidth(text, 'Arial', size) * TEXT_SCALE
+    return pdfmetrics.stringWidth(text, 'LabelRegular', size) * TEXT_SCALE
+
+
+def fit_width(text, size=SIZE):
+    return sum(max(pdfmetrics.stringWidth(char, 'LabelRegular', size),
+                   pdfmetrics.stringWidth(char, 'LabelItalic', size)) for char in text) * TEXT_SCALE
 
 
 def taxon_italic_ranges(microhabitat):
@@ -138,7 +144,7 @@ def coordinate_runs(row, line, size):
     uncertainty = f"±{row.get('Uncertainty', '')}m"
     if (LAYOUT_MODE == 'lines' and row.get('Uncertainty')
             and line == coordinates + uncertainty):
-        return [(coordinates, size, .62), (uncertainty, 3.5, TEXT_SCALE)]
+        return [(coordinates, size, COORDINATE_SCALE), (uncertainty, 3.5, TEXT_SCALE)]
     return [(line, size, TEXT_SCALE)]
 
 
@@ -147,23 +153,23 @@ def field_width(text):
 
 
 def run_width(runs):
-    return sum(pdfmetrics.stringWidth(text, 'Arial', size) * scale for text, size, scale in runs)
+    return sum(pdfmetrics.stringWidth(text, 'LabelRegular', size) * scale for text, size, scale in runs)
 
 
-def draw_text(pdf, x, y, text, right=False, size=SIZE, italic_ranges=(), horizontal_scale=TEXT_SCALE):
+def draw_text(pdf, x, y, text, right=False, size=SIZE, italic_ranges=(), horizontal_scale=None):
     if right:
         x -= width(text, size)
     obj = pdf.beginText(x, y)
-    obj.setFont('Arial', size)
-    obj.setHorizScale(horizontal_scale * 100)
+    obj.setFont('LabelRegular', size)
+    obj.setHorizScale((TEXT_SCALE if horizontal_scale is None else horizontal_scale) * 100)
     offset = 0
     for start, end in italic_ranges:
-        obj.setFont('Arial', size)
+        obj.setFont('LabelRegular', size)
         obj.textOut(text[offset:start])
-        obj.setFont('ArialItalic', size)
+        obj.setFont('LabelItalic', size)
         obj.textOut(text[start:end])
         offset = end
-    obj.setFont('Arial', size)
+    obj.setFont('LabelRegular', size)
     obj.textOut(text[offset:])
     pdf.drawText(obj)
 
@@ -197,7 +203,7 @@ def text_size(index):
 
 def text_baseline(index):
     if MAIN_SIZE == 4:
-        return HEIGHT - .3 - pdfmetrics.getAscent('Arial') * MAIN_SIZE / 1000 - index * NORMAL_LEADING
+        return HEIGHT - .3 - pdfmetrics.getAscent('LabelRegular') * MAIN_SIZE / 1000 - index * NORMAL_LEADING
     return HEIGHT - PAD - SIZE - index * LEADING
 
 
@@ -261,7 +267,7 @@ def flow_layout(row, templates, label_width, uncertainty):
                 if baseline - below < .2:
                     break
                 available = available_at(label_width, baseline, text, size, row.get('Field_Number', ''))
-                if width(text, size) <= available:
+                if fit_width(text, size) <= available:
                     candidates.append((end, text, baseline, below))
             for end, text, baseline, below in reversed(candidates):
                 rest = fit(end, round((baseline - below - .22) * 1000), depth + 1)
@@ -306,7 +312,7 @@ def _layout(row, templates, label_width, uncertainty):
             above, below = ink_bounds(line, size)
             baseline = text_baseline(i)
             available = available_at(label_width, baseline, line, size, row.get('Field_Number', ''))
-            if (run_width(coordinate_runs(row, line, size)) <= available and baseline + above <= previous_bottom + .001
+            if ((fit_width(line, size) if i >= 5 else run_width(coordinate_runs(row, line, size))) <= available and baseline + above <= previous_bottom + .001
                     and baseline - below >= .1):
                 chosen = size
                 break
@@ -352,7 +358,7 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
         pdf.setLineWidth(.15)
         pdf.rect(x, y, label_width, HEIGHT)
         pdf.setStrokeColorRGB(0, 0, 0)
-    pdf.setFont('Arial', SIZE)
+    pdf.setFont('LabelRegular', SIZE)
     italics = label_italic_ranges(lines, row.get('Microhabitat_Label', ''))
     for i, line in enumerate(lines):
         runs = coordinate_runs(row, line, lines.sizes[i])
@@ -362,7 +368,7 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
             cursor = x + PAD
             for text, size, scale in runs:
                 draw_text(pdf, cursor, y + lines.baselines[i], text, size=size, horizontal_scale=scale)
-                cursor += pdfmetrics.stringWidth(text, 'Arial', size) * scale
+                cursor += pdfmetrics.stringWidth(text, 'LabelRegular', size) * scale
     pdf.saveState()
     pdf.translate(x + label_width - PAD - .75, y + (HEIGHT - width(row['Catalog_Number'], CATALOG_SIZE)) / 2)
     pdf.rotate(90)
@@ -409,13 +415,13 @@ def habitat_label_plan(row, label_width, height, max_lines=3):
         current = ''
         for word in field.split():
             candidate = (current + ' ' + word).strip()
-            if width(candidate, 4) <= available:
+            if fit_width(candidate, 4) <= available:
                 current = candidate
             else:
                 if current:
                     texts.append(current)
                     sources.append(source)
-                if width(word, 4) > available:
+                if fit_width(word, 4) > available:
                     raise ValueError(f"Excel row {row['_excel_row']} ({row['Catalog_Number']}): habitat word cannot fit at 4 pt: {word!r}. Shorten its label field.")
                 current = word
         texts.append(current)
@@ -510,22 +516,25 @@ def draw_field_heading(pdf, heading, label_width):
 
 
 def generate(args):
-    global MAIN_SIZE, FONT_PATH, LAYOUT_MODE, ITALIC_FONT_PATH, FIELD_SIZE, FIELD_FONT
+    global MAIN_SIZE, FONT_PATH, LAYOUT_MODE, ITALIC_FONT_PATH, FIELD_SIZE, FIELD_FONT, TEXT_SCALE, COORDINATE_SCALE
     configure_dimensions(args.width, args.height, args.max_width)
     FIELD_SIZE = args.field_size
     MAIN_SIZE = args.main_size
     LAYOUT_MODE = args.layout
-    FONT_PATH = args.font
+    family = 'Verdana' if args.font_family == 'verdana' else 'Arial'
+    TEXT_SCALE = .70 if family == 'Verdana' else .75
+    COORDINATE_SCALE = .49 if family == 'Verdana' else .62
+    font = Path(args.font) if args.font else Path('/System/Library/Fonts/Supplemental') / (family + '.ttf')
+    FONT_PATH = str(font)
     ink_font.cache_clear()
-    font = Path(args.font)
     if not font.is_file():
-        raise ValueError('Arial font not found. Supply its .ttf path with --font.')
-    pdfmetrics.registerFont(TTFont('Arial', str(font)))
-    ITALIC_FONT_PATH = args.italic_font
-    italic_path = Path(args.italic_font)
+        raise ValueError(f'{family} regular font not found. Supply its .ttf path with --font.')
+    pdfmetrics.registerFont(TTFont('LabelRegular', str(font)))
+    italic_path = Path(args.italic_font) if args.italic_font else font.with_name(family + ' Italic.ttf')
+    ITALIC_FONT_PATH = str(italic_path)
     if not italic_path.is_file():
-        raise ValueError('Arial Italic font not found. Supply --italic-font with its .ttf path.')
-    pdfmetrics.registerFont(TTFont('ArialItalic', str(italic_path)))
+        raise ValueError('Italic font not found. Supply a matching .ttf path with --italic-font.')
+    pdfmetrics.registerFont(TTFont('LabelItalic', str(italic_path)))
     field_path = Path(args.field_font) if args.field_font else font.with_name('Verdana.ttf')
     if not field_path.is_file():
         if args.field_font:
@@ -533,17 +542,13 @@ def generate(args):
         field_path = font
     pdfmetrics.registerFont(TTFont('FieldNumber', str(field_path)))
     FIELD_FONT = 'FieldNumber'
-    heading_path = Path(args.heading_font) if args.heading_font else font.with_name('Arial Bold.ttf')
+    heading_path = Path(args.heading_font) if args.heading_font else font.with_name(family + ' Bold.ttf')
     if not heading_path.is_file():
-        heading_path = font.with_name('arialbd.ttf')
+        heading_path = font.with_name('verdanab.ttf' if family == 'Verdana' else 'arialbd.ttf')
     if not heading_path.is_file() and not args.no_field_headings:
-        raise ValueError('Bold heading font not found. Supply --heading-font with an Arial Bold .ttf path.')
+        raise ValueError('Bold heading font not found. Supply --heading-font with a matching bold .ttf path.')
     if heading_path.is_file():
         pdfmetrics.registerFont(TTFont('FieldHeading', str(heading_path)))
-    # Arial regular and italic share advance widths; preserve fit measurements.
-    for code in range(32, 127):
-        if abs(pdfmetrics.stringWidth(chr(code), 'Arial', SIZE) - pdfmetrics.stringWidth(chr(code), 'ArialItalic', SIZE)) > .001:
-            raise ValueError('Regular and italic font widths differ; use matching Arial font files.')
     rows = read_rows(args.excel, args.sheet)
     templates = json.loads(Path(args.template).read_text()) if args.template else DEFAULT_LINES
     if not isinstance(templates, list) or not templates or not all(isinstance(t, str) for t in templates):
@@ -615,14 +620,14 @@ def generate(args):
                'habitat_label_height_inches': args.habitat_height if args.separate_habitat else None,
                'habitat_label_gap_inches': args.habitat_gap if args.separate_habitat else None, 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
                'field_headings': not args.no_field_headings, 'field_font_path': str(field_path),
-               'field_font_horizontal_scale': FIELD_SCALE, 'layout': LAYOUT_MODE, 'font': 'Arial', 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
+               'field_font_horizontal_scale': FIELD_SCALE, 'layout': LAYOUT_MODE, 'font': pdfmetrics.getFont('LabelRegular').face.familyName.decode('utf-8', errors='replace'), 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
                'barcode_dark_symbol_inches': 0.11, 'barcode_center_y_inches': HEIGHT / 144,
-               'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'barcode': 'Data Matrix',
+               'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'coordinate_horizontal_scale': COORDINATE_SCALE, 'barcode': 'Data Matrix',
                'macrohabitat_omitted_count': sum(r['macrohabitat_omitted'] for r in report),
                'uncertainty_omitted_count': sum(r['uncertainty_omitted'] for r in report), 'records': report}
     output.with_suffix('.json').write_text(json.dumps(summary, indent=2))
     habitat_description = '4 pt on separate habitat labels' if args.separate_habitat else '3.5 pt habitat'
-    print(f"Created {output}: {len(rows)} main labels, {common_width / 72:.2f} × {HEIGHT / 72:.2f} in, Arial {MAIN_SIZE:g} pt main / {habitat_description}.")
+    print(f"Created {output}: {len(rows)} main labels, {common_width / 72:.2f} × {HEIGHT / 72:.2f} in, {family} {MAIN_SIZE:g} pt main / {habitat_description}.")
     if args.separate_habitat:
         print(f"Added {len(rows)} habitat labels, {args.habitat_width:.2f} × {args.habitat_height:.2f} in, {args.habitat_gap:.2f}-inch gap.")
     print(f"Field Number: {FIELD_SIZE:g} pt, {field_path.name}; block headings {'off' if args.no_field_headings else 'on'}.")
@@ -636,10 +641,11 @@ def main():
     p.add_argument('-o', '--output', default='output/labels.pdf')
     p.add_argument('--sheet')
     p.add_argument('--layout', choices=['lines', 'flow'], default='lines', help='Separate fields into lines, or wrap comma-separated fields')
-    p.add_argument('--italic-font', default='/System/Library/Fonts/Supplemental/Arial Italic.ttf')
+    p.add_argument('--font-family', choices=['arial', 'verdana'], default='arial', help='Main, catalog, and habitat font family (default arial)')
+    p.add_argument('--italic-font', help='Matching italic .ttf path; defaults to the selected family')
     p.add_argument('--main-size', type=float, choices=[3.5, 4.0], default=4.0, help='Font size for the first five physical text lines')
     p.add_argument('--template', help='JSON list of lines with [Excel_Column] placeholders')
-    p.add_argument('--font', default='/System/Library/Fonts/Supplemental/Arial.ttf')
+    p.add_argument('--font', help='Regular .ttf path; defaults to the selected family')
     p.add_argument('--width', type=float, default=.68, help='Label width in inches; must never exceed 0.68')
     p.add_argument('--max-width', type=float, default=None, help='Deprecated: must equal --width; automatic widening is disabled')
     p.add_argument('--height', type=float, default=.33, help='Label height in inches (0.33–10.5); barcode stays vertically centered')
@@ -650,7 +656,7 @@ def main():
     p.add_argument('--habitat-gap', type=float, default=.02, help='Gap between main and separate habitat label in inches (default 0.02)')
     p.add_argument('--field-size', type=float, choices=[3.5, 4.0], default=4.0, help='Field-number font size (default 4)')
     p.add_argument('--field-font', help='Field-number .ttf font (prefers Verdana beside Arial, otherwise regular Arial)')
-    p.add_argument('--heading-font', help='Bold .ttf font for 5-point field block headings (default Arial Bold)')
+    p.add_argument('--heading-font', help='Bold .ttf font for 5-point field block headings (default selected-family Bold)')
     p.add_argument('--no-field-headings', action='store_true', help='Disable field block headings above labels')
     p.add_argument('--guides', action='store_true', help='Add light cutting rectangles')
     args = p.parse_args()

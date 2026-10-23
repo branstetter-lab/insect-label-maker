@@ -43,7 +43,7 @@ The program requires matching **Arial Regular** and **Arial Italic** TrueType fo
 python label_maker.py examples/example_specimens.xlsx --font "/path/to/Arial.ttf" --italic-font "/path/to/Arial Italic.ttf" --output output/example.pdf
 ```
 
-Typical Windows paths are `C:\Windows\Fonts\arial.ttf` and `C:\Windows\Fonts\ariali.ttf`. Linux users must provide their own installed Arial files. The program checks that the regular and italic fonts have matching character widths.
+Typical Windows paths are `C:\Windows\Fonts\arial.ttf` and `C:\Windows\Fonts\ariali.ttf`. Linux users must provide their own installed Arial files. Regular and italic fonts should come from the same family. Fitting accounts conservatively for differences in their character widths, including Verdana’s wider italic characters.
 
 ## Prepare the Excel file
 
@@ -110,6 +110,7 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `excel` | Required | Input `.xlsx` path (positional argument). |
 | `-o`, `--output` | `output/labels.pdf` | PDF path; JSON report uses the same basename. |
 | `--layout lines\|flow` | `lines` | Separate-line or comma-separated wrapped layout. |
+| `--font-family arial\|verdana` | `arial` | Select matching main, catalog, habitat, italic, and bold-heading fonts. |
 | `--main-size 4\|3.5` | `4` | Preferred main-text size. `4` permits per-line fallback; `3.5` uses the smaller normal-layout profile. |
 | `--template PATH` | Built-in six entries | Load a JSON template. |
 | `--sheet NAME` | Active sheet | Select a worksheet. |
@@ -137,6 +138,16 @@ python label_maker.py "/path/to/specimens.xlsx" --layout flow --height 0.40 --ou
 ```
 
 The barcode and catalog number remain vertically centered, and page row counts adapt to the chosen height. A taller label can fit more wrapped lines, but it does not solve an individual text line or word that is too wide; shorten that text or use the wrapped layout. Barcode size, code font sizes, and page gaps are constants in `label_maker.py`, not command-line options. Longer catalog identifiers may require more height or a larger barcode to scan reliably.
+
+## All-Verdana preview
+
+Use `--font-family verdana` to use Verdana for the main text, coordinates, catalog numbers, habitat text, scientific-name italics, and bold block headings. Field Numbers already default to Verdana. The default main family remains Arial so existing commands keep their approved appearance.
+
+```sh
+python label_maker.py "/path/to/specimens.xlsx" --separate-habitat --font-family verdana --output output/all_verdana.pdf
+```
+
+The selected family defaults to its matching regular, italic, and bold font files in the macOS font folder. On other systems, supply `--font`, `--italic-font`, and `--heading-font` paths for that family. Verdana uses 70% horizontal scale for body/catalog/habitat text and 49% for latitude/longitude beside uncertainty, because its wider characters otherwise exceed the fixed boundary. Field Numbers retain their separate 60% scale. Font heights remain as specified; individual main lines can still fall back to 3.5 points. The label width, height, and barcode geometry do not change. Print at actual size to compare readability. See `examples/example_labels_verdana.pdf`.
 
 ## Field Numbers and block headings
 

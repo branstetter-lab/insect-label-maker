@@ -12,6 +12,8 @@ class LabelTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         l.pdfmetrics.registerFont(l.TTFont('Arial', '/System/Library/Fonts/Supplemental/Arial.ttf'))
+        l.pdfmetrics.registerFont(l.TTFont('LabelRegular', '/System/Library/Fonts/Supplemental/Arial.ttf'))
+        l.pdfmetrics.registerFont(l.TTFont('LabelItalic', '/System/Library/Fonts/Supplemental/Arial Italic.ttf'))
         l.pdfmetrics.registerFont(l.TTFont('ArialBold', '/System/Library/Fonts/Supplemental/Arial Bold.ttf'))
 
     def setUp(self):
@@ -272,6 +274,31 @@ class LabelTests(unittest.TestCase):
         code = 'MGB4066'
         self.assertGreater(right_edge - l.field_width(code), text_edge)
         self.assertEqual(l.FIELD_SIZE, 4)
+
+    def test_all_verdana_output(self):
+        from pypdf import PdfReader
+        script = Path(l.__file__).resolve()
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / 'verdana.pdf'
+            result = subprocess.run([sys.executable, str(script), str(script.parent / 'examples/example_specimens.xlsx'),
+                                     '--font-family', 'verdana', '--separate-habitat', '-o', str(output)],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(output.with_suffix('.json').read_text())
+            self.assertEqual(report['font'], 'Verdana')
+            self.assertEqual(report['width_inches'], .68)
+            self.assertEqual(report['coordinate_horizontal_scale'], .49)
+            self.assertEqual(report['uncertainty_omitted_count'], 0)
+            used_fonts = []
+            def visitor(text, cm, tm, font, size):
+                if text.strip():
+                    used_fonts.append(str(font.get('/BaseFont', '')))
+            for page in PdfReader(output).pages:
+                page.extract_text(visitor_text=visitor)
+            self.assertTrue(used_fonts)
+            self.assertTrue(all('Verdana' in font for font in used_fonts))
+            self.assertTrue(any('Italic' in font for font in used_fonts))
+            self.assertTrue(any('Bold' in font for font in used_fonts))
 
     def test_duplicate_ids_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
