@@ -95,7 +95,7 @@ Both layouts default to **0.68 × 0.33-inch labels**, with 0.02-inch horizontal/
 - **`lines` (default):** keeps the six template entries on separate lines. Entries 1–5 start at 4 points and individually fall back to 3.5 points if needed. Entry 6 stays at 3.5 points. The adaptive layout uses equal 3.8-point baseline spacing, independent of font size.
 - **`flow`:** joins entries with commas and wraps them into a text column. It tries 4-point text first and 3.5 points when needed; physical lines containing habitat text use 3.5 points. Wrapped lines use their own flow spacing.
 
-All main and habitat text stays behind an invisible boundary left of the barcode, including above and below it. Catalog and field numbers have separate positions. The Data Matrix is vertically centered; catalog text is 3.75 points and field-number text defaults to 4 points. The Field Number uses Verdana when available, otherwise Arial, with its own 60% horizontal scale to stay clear of the main text and barcode.
+All main and habitat text stays behind an invisible boundary left of the barcode, including above and below it. Catalog and field numbers have separate positions. The Data Matrix is vertically centered; catalog text is 3.75 points and field-number text defaults to 4 points. The Field Number uses Verdana when available, otherwise Arial, with its own 60% horizontal scale to stay clear of the main text and barcode. The Field Number is shifted 0.2 point left within its reserved space.
 
 Text normally uses 75% horizontal scale. In the standard normal layout, latitude/longitude beside uncertainty uses 62% scale, and the uncertainty term is always 3.5 points. The coordinate line stays on line 3; elevation/date stay on line 4.
 
@@ -151,7 +151,7 @@ The selected family defaults to its matching regular, italic, and bold font file
 
 ## Field Numbers and block headings
 
-Field Numbers connect the printed labels to pre-labeled specimens. By default, the sheet inserts a **5-point bold** heading such as `---- EVT001 ----` whenever `Field_Number` changes. Headings are outside the specimen labels and repeat when a field block continues into another column or page. Label/habitat pairs stay together. Rows remain in spreadsheet order; the tool does not sort or merge noncontiguous runs of the same Field Number. Blank Field Numbers do not produce a heading.
+Field Numbers connect the printed labels to pre-labeled specimens. By default, the sheet inserts a **5-point bold** heading such as `---- EVT001 ----` whenever `Field_Number` changes. Smaller 3.5-point dashes extend across the rest of the column on both sides, while the number remains bold at 5 points. Headings are outside the specimen labels and repeat when a field block continues into another column or page. Label/habitat pairs stay together. Rows remain in spreadsheet order; the tool does not sort or merge noncontiguous runs of the same Field Number. Blank Field Numbers do not produce a heading.
 
 On each main label, the Field Number defaults to **4-point Verdana** at 60% horizontal scale. This changes only the event code; locality and catalog fonts remain unchanged. Verdana is used if `Verdana.ttf` is installed beside the supplied Arial font. Otherwise the tool uses regular Arial and reports the chosen filename in the console and JSON. Font files are not included in the distribution.
 

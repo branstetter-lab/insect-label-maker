@@ -15,6 +15,7 @@ class LabelTests(unittest.TestCase):
         l.pdfmetrics.registerFont(l.TTFont('LabelRegular', '/System/Library/Fonts/Supplemental/Arial.ttf'))
         l.pdfmetrics.registerFont(l.TTFont('LabelItalic', '/System/Library/Fonts/Supplemental/Arial Italic.ttf'))
         l.pdfmetrics.registerFont(l.TTFont('ArialBold', '/System/Library/Fonts/Supplemental/Arial Bold.ttf'))
+        l.pdfmetrics.registerFont(l.TTFont('FieldHeading', '/System/Library/Fonts/Supplemental/Arial Bold.ttf'))
 
     def setUp(self):
         self.previous_main_size = l.MAIN_SIZE
@@ -272,7 +273,7 @@ class LabelTests(unittest.TestCase):
         right_edge = l.MIN_WIDTH - l.PAD - l.SIDE
         text_edge = right_edge - l.BAR - 1.7
         code = 'MGB4066'
-        self.assertGreater(right_edge - l.field_width(code), text_edge)
+        self.assertGreater(right_edge - l.field_width(code) - l.FIELD_LEFT_SHIFT, text_edge)
         self.assertEqual(l.FIELD_SIZE, 4)
 
     def test_all_verdana_output(self):
@@ -299,6 +300,30 @@ class LabelTests(unittest.TestCase):
             self.assertTrue(all('Verdana' in font for font in used_fonts))
             self.assertTrue(any('Italic' in font for font in used_fonts))
             self.assertTrue(any('Bold' in font for font in used_fonts))
+            from pypdf.generic import ContentStream
+            charspace, stack = 0, []
+            checked = 0
+            for page in PdfReader(output).pages:
+                for operands, operator in ContentStream(page.get_contents(), page.pdf).operations:
+                    if operator == b'q':
+                        stack.append(charspace)
+                    elif operator == b'Q':
+                        charspace = stack.pop()
+                    elif operator == b'Tc':
+                        charspace = float(operands[0])
+                    elif operator == b'Tj' and str(operands[0]).strip('- '):
+                        self.assertEqual(charspace, 0)
+                        checked += 1
+            self.assertGreater(checked, 0)
+
+    def test_heading_dash_segments_fill_width(self):
+        plan = l.heading_segments('MGB4066', l.MIN_WIDTH)
+        used = 2 * plan['side_width'] + 2 * plan['gap'] + plan['number_width']
+        self.assertAlmostEqual(used, l.MIN_WIDTH - 2 * l.PAD)
+        dash_width = l.pdfmetrics.stringWidth('-', 'FieldHeading', plan['dash_size'])
+        side = plan['dash_count'] * dash_width + (plan['dash_count'] - 1) * plan['dash_spacing']
+        self.assertAlmostEqual(side, plan['side_width'])
+        self.assertLess(plan['dash_size'], plan['size'])
 
     def test_duplicate_ids_rejected(self):
         with tempfile.TemporaryDirectory() as folder:

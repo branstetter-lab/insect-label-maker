@@ -26,6 +26,7 @@ CATALOG_SIZE = 3.75
 FIELD_SIZE = 4.0
 FIELD_FONT = "Arial"
 FIELD_SCALE = .60
+FIELD_LEFT_SHIFT = .2
 HEADING_HEIGHT = 8.0
 CATALOG_PAD = .3
 PAGE_GAP = .02 * 72
@@ -161,6 +162,7 @@ def draw_text(pdf, x, y, text, right=False, size=SIZE, italic_ranges=(), horizon
         x -= width(text, size)
     obj = pdf.beginText(x, y)
     obj.setFont('LabelRegular', size)
+    obj.setCharSpace(0)
     obj.setHorizScale((TEXT_SCALE if horizontal_scale is None else horizontal_scale) * 100)
     offset = 0
     for start, end in italic_ranges:
@@ -280,7 +282,7 @@ def flow_layout(row, templates, label_width, uncertainty):
 
 
 def _layout(row, templates, label_width, uncertainty):
-    if field_width(row.get('Field_Number', '')) > BAR + 1.7:
+    if field_width(row.get('Field_Number', '')) + FIELD_LEFT_SHIFT > BAR + 1.7:
         return None
     if width(row['Catalog_Number'], CATALOG_SIZE) > HEIGHT - 2 * CATALOG_PAD:
         return None
@@ -385,8 +387,9 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
                 pdf.rect(bx + ix * step, by + (img.height - 1 - iy) * step,
                          step, step, fill=1, stroke=0)
     event = row.get('Field_Number', '')
-    obj = pdf.beginText(bx + BAR - field_width(event), y + EVENT_Y)
+    obj = pdf.beginText(bx + BAR - field_width(event) - FIELD_LEFT_SHIFT, y + EVENT_Y)
     obj.setFont(FIELD_FONT, FIELD_SIZE)
+    obj.setCharSpace(0)
     obj.setHorizScale(FIELD_SCALE * 100)
     obj.textOut(event)
     pdf.drawText(obj)
@@ -502,17 +505,40 @@ def sheet_positions(rows, label_width, pair_height, headings=True):
     return result
 
 
+def heading_segments(field_number, label_width):
+    size, dash_size, gap = 5, 3.5, 1
+    available = label_width - 2 * PAD
+    number_width = pdfmetrics.stringWidth(field_number, 'FieldHeading', size)
+    scale = min(1, (available - 2 * gap - 4) / number_width)
+    number_width *= scale
+    side_width = (available - number_width - 2 * gap) / 2
+    dash_width = pdfmetrics.stringWidth('-', 'FieldHeading', dash_size)
+    count = max(2, int(side_width / dash_width))
+    return {'size': size, 'dash_size': dash_size, 'number_scale': scale,
+            'number_width': number_width, 'side_width': side_width,
+            'dash_count': count, 'dash_spacing': (side_width - count * dash_width) / (count - 1), 'gap': gap}
+
+
 def draw_field_heading(pdf, heading, label_width):
-    text = heading['text']
-    size = 5
-    natural = pdfmetrics.stringWidth(text, 'FieldHeading', size)
-    scale = min(1, (label_width - 2 * PAD) / natural)
-    obj = pdf.beginText(heading['x_points'] + PAD + (label_width - 2 * PAD - natural * scale) / 2,
-                       heading['baseline'])
-    obj.setFont('FieldHeading', size)
-    obj.setHorizScale(scale * 100)
-    obj.textOut(text)
+    pdf.saveState()
+    field = heading['field_number']
+    parts = heading_segments(field, label_width)
+    x = heading['x_points'] + PAD
+    number_x = x + parts['side_width'] + parts['gap']
+    obj = pdf.beginText(number_x, heading['baseline'])
+    obj.setFont('FieldHeading', parts['size'])
+    obj.setHorizScale(parts['number_scale'] * 100)
+    obj.textOut(field)
     pdf.drawText(obj)
+    for dash_x in [x, number_x + parts['number_width'] + parts['gap']]:
+        obj = pdf.beginText(dash_x, heading['baseline'] + .6)
+        obj.setFont('FieldHeading', parts['dash_size'])
+        obj.setCharSpace(parts['dash_spacing'])
+        obj.textOut('-' * parts['dash_count'])
+        pdf.drawText(obj)
+    heading['text'] = '-' * parts['dash_count'] + ' ' + field + ' ' + '-' * parts['dash_count']
+    pdf.restoreState()
+
 
 
 def generate(args):
@@ -620,7 +646,7 @@ def generate(args):
                'habitat_label_height_inches': args.habitat_height if args.separate_habitat else None,
                'habitat_label_gap_inches': args.habitat_gap if args.separate_habitat else None, 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
                'field_headings': not args.no_field_headings, 'field_font_path': str(field_path),
-               'field_font_horizontal_scale': FIELD_SCALE, 'layout': LAYOUT_MODE, 'font': pdfmetrics.getFont('LabelRegular').face.familyName.decode('utf-8', errors='replace'), 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
+               'field_font_horizontal_scale': FIELD_SCALE, 'field_left_shift_points': FIELD_LEFT_SHIFT, 'layout': LAYOUT_MODE, 'font': pdfmetrics.getFont('LabelRegular').face.familyName.decode('utf-8', errors='replace'), 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
                'barcode_dark_symbol_inches': 0.11, 'barcode_center_y_inches': HEIGHT / 144,
                'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'coordinate_horizontal_scale': COORDINATE_SCALE, 'barcode': 'Data Matrix',
                'macrohabitat_omitted_count': sum(r['macrohabitat_omitted'] for r in report),

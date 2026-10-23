@@ -11,6 +11,7 @@
   "field_headings": true,
   "field_font_path": "/System/Library/Fonts/Supplemental/Verdana.ttf",
   "field_font_horizontal_scale": 0.6,
+  "field_left_shift_points": 0.2,
   "layout": "lines",
   "font": "Arial",
   "font_points": 4.0,
@@ -22,6 +23,7 @@
   "horizontal_gap_inches": 0.02,
   "vertical_gap_inches": 0.02,
   "text_horizontal_scale": 0.75,
+  "coordinate_horizontal_scale": 0.62,
   "barcode": "Data Matrix",
   "macrohabitat_omitted_count": 0,
   "uncertainty_omitted_count": 0,
@@ -124,7 +126,7 @@
         "x_points": 18.0,
         "y_points": 742.24,
         "heading": {
-          "text": "---- EVT001 ----",
+          "text": "----------- EVT001 -----------",
           "field_number": "EVT001",
           "continued": false,
           "x_points": 18.0,
@@ -344,7 +346,7 @@
         "x_points": 18.0,
         "y_points": 652.1600000000001,
         "heading": {
-          "text": "---- EVT002 ----",
+          "text": "----------- EVT002 -----------",
           "field_number": "EVT002",
           "continued": false,
           "x_points": 18.0,
@@ -545,7 +547,7 @@
         "x_points": 18.0,
         "y_points": 562.0800000000002,
         "heading": {
-          "text": "---- EVT003 ----",
+          "text": "----------- EVT003 -----------",
           "field_number": "EVT003",
           "continued": false,
           "x_points": 18.0,
