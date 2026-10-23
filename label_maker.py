@@ -25,7 +25,7 @@ ITALIC_FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Italic.ttf"
 CATALOG_SIZE = 3.75
 FIELD_SIZE = 4.0
 FIELD_FONT = "Arial"
-FIELD_SCALE = .65
+FIELD_SCALE = .60
 HEADING_HEIGHT = 8.0
 CATALOG_PAD = .3
 PAGE_GAP = .02 * 72
@@ -526,7 +526,7 @@ def generate(args):
     if not italic_path.is_file():
         raise ValueError('Arial Italic font not found. Supply --italic-font with its .ttf path.')
     pdfmetrics.registerFont(TTFont('ArialItalic', str(italic_path)))
-    field_path = Path(args.field_font) if args.field_font else font.with_name('Tahoma.ttf')
+    field_path = Path(args.field_font) if args.field_font else font.with_name('Verdana.ttf')
     if not field_path.is_file():
         if args.field_font:
             raise ValueError('Field-number font not found. Supply --field-font with a valid .ttf path.')
@@ -649,7 +649,7 @@ def main():
     p.add_argument('--habitat-max-lines', type=int, choices=[2, 3], default=3, help='Maximum physical lines on separate habitat label (default 3)')
     p.add_argument('--habitat-gap', type=float, default=.02, help='Gap between main and separate habitat label in inches (default 0.02)')
     p.add_argument('--field-size', type=float, choices=[3.5, 4.0], default=4.0, help='Field-number font size (default 4)')
-    p.add_argument('--field-font', help='Field-number .ttf font (prefers Tahoma beside Arial, otherwise regular Arial)')
+    p.add_argument('--field-font', help='Field-number .ttf font (prefers Verdana beside Arial, otherwise regular Arial)')
     p.add_argument('--heading-font', help='Bold .ttf font for 5-point field block headings (default Arial Bold)')
     p.add_argument('--no-field-headings', action='store_true', help='Disable field block headings above labels')
     p.add_argument('--guides', action='store_true', help='Add light cutting rectangles')

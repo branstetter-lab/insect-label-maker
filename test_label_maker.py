@@ -234,6 +234,8 @@ class LabelTests(unittest.TestCase):
             report = json.loads(output.with_suffix('.json').read_text())
             self.assertEqual(report['physical_labels'], 442)
             self.assertEqual(report['habitat_font_points'], 4)
+            self.assertTrue(report['field_font_path'].endswith('Verdana.ttf'))
+            self.assertEqual(report['field_font_points'], 4)
             self.assertEqual(len(PdfReader(output).pages), 2)
             capacity = int((792 - 36 + l.PAGE_GAP) // ((.33 + .02 + .20) * 72 + l.PAGE_GAP)) * 11
             self.assertEqual(report['records'][capacity - 1]['habitat_label']['page'], 1)
