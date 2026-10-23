@@ -23,7 +23,10 @@ LAYOUT_MODE = "lines"
 FONT_PATH = "/System/Library/Fonts/Supplemental/Arial.ttf"
 ITALIC_FONT_PATH = "/System/Library/Fonts/Supplemental/Arial Italic.ttf"
 CATALOG_SIZE = 3.75
-FIELD_SIZE = 3.1
+FIELD_SIZE = 4.0
+FIELD_FONT = "Arial"
+FIELD_SCALE = .65
+HEADING_HEIGHT = 8.0
 CATALOG_PAD = .3
 PAGE_GAP = .02 * 72
 TEXT_SCALE = .75  # condensed text; font height remains unchanged
@@ -137,6 +140,10 @@ def coordinate_runs(row, line, size):
             and line == coordinates + uncertainty):
         return [(coordinates, size, .62), (uncertainty, 3.5, TEXT_SCALE)]
     return [(line, size, TEXT_SCALE)]
+
+
+def field_width(text):
+    return pdfmetrics.stringWidth(text, FIELD_FONT, FIELD_SIZE) * FIELD_SCALE
 
 
 def run_width(runs):
@@ -267,7 +274,7 @@ def flow_layout(row, templates, label_width, uncertainty):
 
 
 def _layout(row, templates, label_width, uncertainty):
-    if width(row.get('Field_Number', ''), FIELD_SIZE) > BAR + 7:
+    if field_width(row.get('Field_Number', '')) > BAR + 1.7:
         return None
     if width(row['Catalog_Number'], CATALOG_SIZE) > HEIGHT - 2 * CATALOG_PAD:
         return None
@@ -371,7 +378,12 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
             if img.getpixel((ix, iy)) < 128:
                 pdf.rect(bx + ix * step, by + (img.height - 1 - iy) * step,
                          step, step, fill=1, stroke=0)
-    draw_text(pdf, bx + BAR, y + EVENT_Y, row.get('Field_Number', ''), right=True, size=FIELD_SIZE)
+    event = row.get('Field_Number', '')
+    obj = pdf.beginText(bx + BAR - field_width(event), y + EVENT_Y)
+    obj.setFont(FIELD_FONT, FIELD_SIZE)
+    obj.setHorizScale(FIELD_SCALE * 100)
+    obj.textOut(event)
+    pdf.drawText(obj)
 
 
 def separate_habitat_templates(templates):
@@ -452,9 +464,55 @@ def configure_dimensions(width_inches, height_inches, max_width=None):
     BAR_Y = (HEIGHT - BAR) / 2
 
 
+def sheet_positions(rows, label_width, pair_height, headings=True):
+    """Pack intact pairs down columns; repeat field headings at continuations."""
+    margin, gap = 18, PAGE_GAP
+    columns = int((612 - 2 * margin + gap) // (label_width + gap))
+    if columns < 1:
+        raise ValueError('Label width exceeds printable page width.')
+    page, column, top = 1, 0, 792 - margin
+    previous_field = None
+    result = []
+    for row in rows:
+        field = row.get('Field_Number', '')
+        while True:
+            needs_heading = headings and bool(field) and (field != previous_field or top == 792 - margin)
+            reserve = HEADING_HEIGHT if needs_heading else 0
+            if top - reserve - pair_height >= margin - .0001:
+                break
+            if top == 792 - margin:
+                raise ValueError('The label pair and its field heading cannot fit on a page. Reduce label heights or gap.')
+            column += 1
+            if column == columns:
+                column, page = 0, page + 1
+            top = 792 - margin
+        x = margin + column * (label_width + gap)
+        heading = {'text': f'---- {field} ----', 'field_number': field, 'continued': field == previous_field,
+                   'x_points': x, 'baseline': top - 5} if needs_heading else None
+        top -= reserve
+        result.append({'page': page, 'x_points': x, 'y_points': top - HEIGHT, 'heading': heading})
+        top -= pair_height + gap
+        previous_field = field
+    return result
+
+
+def draw_field_heading(pdf, heading, label_width):
+    text = heading['text']
+    size = 5
+    natural = pdfmetrics.stringWidth(text, 'FieldHeading', size)
+    scale = min(1, (label_width - 2 * PAD) / natural)
+    obj = pdf.beginText(heading['x_points'] + PAD + (label_width - 2 * PAD - natural * scale) / 2,
+                       heading['baseline'])
+    obj.setFont('FieldHeading', size)
+    obj.setHorizScale(scale * 100)
+    obj.textOut(text)
+    pdf.drawText(obj)
+
+
 def generate(args):
-    global MAIN_SIZE, FONT_PATH, LAYOUT_MODE, ITALIC_FONT_PATH
+    global MAIN_SIZE, FONT_PATH, LAYOUT_MODE, ITALIC_FONT_PATH, FIELD_SIZE, FIELD_FONT
     configure_dimensions(args.width, args.height, args.max_width)
+    FIELD_SIZE = args.field_size
     MAIN_SIZE = args.main_size
     LAYOUT_MODE = args.layout
     FONT_PATH = args.font
@@ -468,6 +526,20 @@ def generate(args):
     if not italic_path.is_file():
         raise ValueError('Arial Italic font not found. Supply --italic-font with its .ttf path.')
     pdfmetrics.registerFont(TTFont('ArialItalic', str(italic_path)))
+    field_path = Path(args.field_font) if args.field_font else font.with_name('Tahoma.ttf')
+    if not field_path.is_file():
+        if args.field_font:
+            raise ValueError('Field-number font not found. Supply --field-font with a valid .ttf path.')
+        field_path = font
+    pdfmetrics.registerFont(TTFont('FieldNumber', str(field_path)))
+    FIELD_FONT = 'FieldNumber'
+    heading_path = Path(args.heading_font) if args.heading_font else font.with_name('Arial Bold.ttf')
+    if not heading_path.is_file():
+        heading_path = font.with_name('arialbd.ttf')
+    if not heading_path.is_file() and not args.no_field_headings:
+        raise ValueError('Bold heading font not found. Supply --heading-font with an Arial Bold .ttf path.')
+    if heading_path.is_file():
+        pdfmetrics.registerFont(TTFont('FieldHeading', str(heading_path)))
     # Arial regular and italic share advance widths; preserve fit measurements.
     for code in range(32, 127):
         if abs(pdfmetrics.stringWidth(chr(code), 'Arial', SIZE) - pdfmetrics.stringWidth(chr(code), 'ArialItalic', SIZE)) > .001:
@@ -503,39 +575,37 @@ def generate(args):
             lines = layout(row, templates, common_width, False)
         plans.append((lines, keep))
     margin, gap = 18, PAGE_GAP
-    cols = int((612 - 2 * margin + gap) // (common_width + gap))
     pair_height = HEIGHT + habitat_gap + habitat_height if args.separate_habitat else HEIGHT
-    per_col = int((792 - 2 * margin + gap) // (pair_height + gap))
-    if per_col < 1:
-        raise ValueError('The main and habitat label pair must fit together within the page margins. Reduce their heights or gap.')
-    if cols < 1:
-        raise ValueError('Label width exceeds printable page width.')
+    positions = sheet_positions(rows, common_width, pair_height, not args.no_field_headings)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
     temp = output.with_suffix('.tmp.pdf')
     pdf = canvas.Canvas(str(temp), pagesize=(612, 792))
     pdf.setTitle('Insect specimen labels')
     report = []
+    current_page = 1
     for index, (row, (lines, keep)) in enumerate(zip(rows, plans)):
-        position = index % (cols * per_col)
-        if index and position == 0:
+        placement = positions[index]
+        if placement['page'] != current_page:
             pdf.showPage()
-        col, r = divmod(position, per_col)
-        x = margin + col * (common_width + gap)
-        y = 792 - margin - HEIGHT - r * (pair_height + gap)
+            current_page = placement['page']
+        x, y = placement['x_points'], placement['y_points']
+        if placement['heading']:
+            draw_field_heading(pdf, placement['heading'], common_width)
         draw_label(pdf, row, lines, x, y, common_width, args.guides)
         habitat_report = None
         if args.separate_habitat:
             habitat_report = dict(habitat_plans[index])
-            habitat_report.update(page=index // (cols * per_col) + 1, x_points=x,
+            habitat_report.update(page=placement['page'], x_points=x,
                                   y_points=y - habitat_gap - habitat_height)
             draw_habitat_label(pdf, habitat_report, x, habitat_report['y_points'], args.habitat_width * 72, args.guides)
         report.append({'excel_row': row['_excel_row'], 'catalog_number': row['Catalog_Number'],
+                       'field_number': row.get('Field_Number', ''),
                        'uncertainty_omitted': bool(row.get('Uncertainty')) and not keep,
                        'macrohabitat_omitted': _layout(row, templates, common_width, keep) is None,
                        'line_text_runs': [coordinate_runs(row, text, size) for text, size in zip(lines, lines.sizes)],
                        'line_font_points': lines.sizes, 'line_baselines': lines.baselines, 'lines': lines,
-                       'habitat_label': habitat_report})
+                       'habitat_label': habitat_report, 'placement': placement})
     pdf.save()
     temp.replace(output)
     summary = {'labels': len(rows), 'separate_habitat': args.separate_habitat,
@@ -544,7 +614,8 @@ def generate(args):
                'habitat_max_lines': args.habitat_max_lines if args.separate_habitat else None,
                'habitat_label_height_inches': args.habitat_height if args.separate_habitat else None,
                'habitat_label_gap_inches': args.habitat_gap if args.separate_habitat else None, 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
-               'layout': LAYOUT_MODE, 'font': 'Arial', 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
+               'field_headings': not args.no_field_headings, 'field_font_path': str(field_path),
+               'field_font_horizontal_scale': FIELD_SCALE, 'layout': LAYOUT_MODE, 'font': 'Arial', 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
                'barcode_dark_symbol_inches': 0.11, 'barcode_center_y_inches': HEIGHT / 144,
                'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'barcode': 'Data Matrix',
                'macrohabitat_omitted_count': sum(r['macrohabitat_omitted'] for r in report),
@@ -554,6 +625,7 @@ def generate(args):
     print(f"Created {output}: {len(rows)} main labels, {common_width / 72:.2f} × {HEIGHT / 72:.2f} in, Arial {MAIN_SIZE:g} pt main / {habitat_description}.")
     if args.separate_habitat:
         print(f"Added {len(rows)} habitat labels, {args.habitat_width:.2f} × {args.habitat_height:.2f} in, {args.habitat_gap:.2f}-inch gap.")
+    print(f"Field Number: {FIELD_SIZE:g} pt, {field_path.name}; block headings {'off' if args.no_field_headings else 'on'}.")
     print(f"Macrohabitat omitted on {summary['macrohabitat_omitted_count']} labels.")
     print(f"Uncertainty omitted on {summary['uncertainty_omitted_count']} labels. Review {output.with_suffix('.json')}.")
 
@@ -576,6 +648,10 @@ def main():
     p.add_argument('--habitat-width', type=float, default=.62, help='Separate habitat label width in inches (default 0.62; must be less than main width)')
     p.add_argument('--habitat-max-lines', type=int, choices=[2, 3], default=3, help='Maximum physical lines on separate habitat label (default 3)')
     p.add_argument('--habitat-gap', type=float, default=.02, help='Gap between main and separate habitat label in inches (default 0.02)')
+    p.add_argument('--field-size', type=float, choices=[3.5, 4.0], default=4.0, help='Field-number font size (default 4)')
+    p.add_argument('--field-font', help='Field-number .ttf font (prefers Tahoma beside Arial, otherwise regular Arial)')
+    p.add_argument('--heading-font', help='Bold .ttf font for 5-point field block headings (default Arial Bold)')
+    p.add_argument('--no-field-headings', action='store_true', help='Disable field block headings above labels')
     p.add_argument('--guides', action='store_true', help='Add light cutting rectangles')
     args = p.parse_args()
     try:

@@ -8,12 +8,15 @@
   "habitat_label_gap_inches": 0.02,
   "width_inches": 0.68,
   "height_inches": 0.33,
+  "field_headings": true,
+  "field_font_path": "/System/Library/Fonts/Supplemental/Tahoma.ttf",
+  "field_font_horizontal_scale": 0.65,
   "layout": "lines",
   "font": "Arial",
   "font_points": 4.0,
   "habitat_font_points": 4,
   "catalog_font_points": 3.75,
-  "field_font_points": 3.1,
+  "field_font_points": 4.0,
   "barcode_dark_symbol_inches": 0.11,
   "barcode_center_y_inches": 0.165,
   "horizontal_gap_inches": 0.02,
@@ -26,6 +29,7 @@
     {
       "excel_row": 2,
       "catalog_number": "DEMO000001",
+      "field_number": "EVT001",
       "uncertainty_omitted": false,
       "macrohabitat_omitted": false,
       "line_text_runs": [
@@ -113,12 +117,25 @@
         "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 734.4
+        "y_points": 726.4
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 742.24,
+        "heading": {
+          "text": "---- EVT001 ----",
+          "field_number": "EVT001",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 769
+        }
       }
     },
     {
       "excel_row": 3,
       "catalog_number": "DEMO000002",
+      "field_number": "EVT001",
       "uncertainty_omitted": false,
       "macrohabitat_omitted": false,
       "line_text_runs": [
@@ -211,12 +228,19 @@
         "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 693.36
+        "y_points": 685.36
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 701.2,
+        "heading": null
       }
     },
     {
       "excel_row": 4,
       "catalog_number": "DEMO000003",
+      "field_number": "EVT002",
       "uncertainty_omitted": false,
       "macrohabitat_omitted": false,
       "line_text_runs": [
@@ -313,12 +337,25 @@
         "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 652.3199999999999
+        "y_points": 636.32
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 652.1600000000001,
+        "heading": {
+          "text": "---- EVT002 ----",
+          "field_number": "EVT002",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 678.9200000000001
+        }
       }
     },
     {
       "excel_row": 5,
       "catalog_number": "DEMO000004",
+      "field_number": "EVT002",
       "uncertainty_omitted": false,
       "macrohabitat_omitted": false,
       "line_text_runs": [
@@ -406,12 +443,19 @@
         "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 611.28
+        "y_points": 595.2800000000001
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 611.1200000000001,
+        "heading": null
       }
     },
     {
       "excel_row": 6,
       "catalog_number": "DEMO000005",
+      "field_number": "EVT003",
       "uncertainty_omitted": false,
       "macrohabitat_omitted": false,
       "line_text_runs": [
@@ -494,12 +538,25 @@
         "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 570.24
+        "y_points": 546.2400000000001
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 562.0800000000002,
+        "heading": {
+          "text": "---- EVT003 ----",
+          "field_number": "EVT003",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 588.8400000000001
+        }
       }
     },
     {
       "excel_row": 7,
       "catalog_number": "DEMO000006",
+      "field_number": "EVT003",
       "uncertainty_omitted": false,
       "macrohabitat_omitted": false,
       "line_text_runs": [
@@ -596,7 +653,13 @@
         "width_inches": 0.62,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 529.1999999999999
+        "y_points": 505.20000000000016
+      },
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 521.0400000000002,
+        "heading": null
       }
     }
   ]

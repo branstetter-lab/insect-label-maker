@@ -37,7 +37,7 @@ The commands below use `python`. On Windows, substitute `.venv\Scripts\python.ex
 
 ### Fonts
 
-The program requires matching **Arial Regular** and **Arial Italic** TrueType font files. It looks in `/System/Library/Fonts/Supplemental/` by default on macOS. On other systems, or if fonts are elsewhere, supply both paths:
+The program requires matching **Arial Regular** and **Arial Italic** TrueType font files, plus **Arial Bold** for the default field-block headings. It looks in `/System/Library/Fonts/Supplemental/` by default on macOS. On other systems, or if fonts are elsewhere, supply both paths:
 
 ```sh
 python label_maker.py examples/example_specimens.xlsx --font "/path/to/Arial.ttf" --italic-font "/path/to/Arial Italic.ttf" --output output/example.pdf
@@ -95,7 +95,7 @@ Both layouts default to **0.68 × 0.33-inch labels**, with 0.02-inch horizontal/
 - **`lines` (default):** keeps the six template entries on separate lines. Entries 1–5 start at 4 points and individually fall back to 3.5 points if needed. Entry 6 stays at 3.5 points. The adaptive layout uses equal 3.8-point baseline spacing, independent of font size.
 - **`flow`:** joins entries with commas and wraps them into a text column. It tries 4-point text first and 3.5 points when needed; physical lines containing habitat text use 3.5 points. Wrapped lines use their own flow spacing.
 
-All main and habitat text stays behind an invisible boundary left of the barcode, including above and below it. Catalog and field numbers have separate positions. The Data Matrix is vertically centered; catalog text is 3.75 points and field-number text is 3.1 points.
+All main and habitat text stays behind an invisible boundary left of the barcode, including above and below it. Catalog and field numbers have separate positions. The Data Matrix is vertically centered; catalog text is 3.75 points and field-number text defaults to 4 points. The Field Number uses Tahoma when available, otherwise Arial, with its own 65% horizontal scale to stay clear of the main text and barcode.
 
 Text normally uses 75% horizontal scale. In the standard normal layout, latitude/longitude beside uncertainty uses 62% scale, and the uncertainty term is always 3.5 points. The coordinate line stays on line 3; elevation/date stay on line 4.
 
@@ -116,6 +116,10 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `--font PATH` | macOS Arial path | Regular Arial `.ttf` file. |
 | `--italic-font PATH` | macOS Arial Italic path | Matching italic `.ttf` file. |
 | `--guides` | Off | Draw light cutting rectangles. |
+| `--field-size 3.5\|4` | `4` | Field Number size on each main label. |
+| `--field-font PATH` | Tahoma if available, otherwise Arial | Optional `.ttf` font for Field Numbers only. |
+| `--heading-font PATH` | Arial Bold beside the regular font | Bold `.ttf` for the field block headings. |
+| `--no-field-headings` | Off | Disable the field block headings. |
 | `--separate-habitat` | Off | Put macrohabitat and microhabitat on a smaller label below the main label. |
 | `--habitat-height INCHES` | `0.20` | Height of the separate habitat label. |
 | `--habitat-width INCHES` | `0.62` | Width of the smaller habitat label; must be less than the main width. |
@@ -133,6 +137,16 @@ python label_maker.py "/path/to/specimens.xlsx" --layout flow --height 0.40 --ou
 ```
 
 The barcode and catalog number remain vertically centered, and page row counts adapt to the chosen height. A taller label can fit more wrapped lines, but it does not solve an individual text line or word that is too wide; shorten that text or use the wrapped layout. Barcode size, code font sizes, and page gaps are constants in `label_maker.py`, not command-line options. Longer catalog identifiers may require more height or a larger barcode to scan reliably.
+
+## Field Numbers and block headings
+
+Field Numbers connect the printed labels to pre-labeled specimens. By default, the sheet inserts a **5-point bold** heading such as `---- EVT001 ----` whenever `Field_Number` changes. Headings are outside the specimen labels and repeat when a field block continues into another column or page. Label/habitat pairs stay together. Rows remain in spreadsheet order; the tool does not sort or merge noncontiguous runs of the same Field Number. Blank Field Numbers do not produce a heading.
+
+On each main label, the Field Number defaults to **4-point Tahoma** at 65% horizontal scale. This changes only the event code; locality and catalog fonts remain unchanged. Tahoma is used if `Tahoma.ttf` is installed beside the supplied Arial font. Otherwise the tool uses regular Arial and reports the chosen filename in the console and JSON. Font files are not included in the distribution.
+
+Use `--field-size 3.5` for smaller event codes or `--field-font "/path/to/Tahoma.ttf"` to select a font explicitly. Long codes must fit within the reserved area; they are not silently shrunk or truncated. The bold heading font defaults to `Arial Bold.ttf` (or `arialbd.ttf`) beside the regular font. Supply `--heading-font "/path/to/bold.ttf"` if needed, or `--no-field-headings` to restore the previous sheet layout. These options work with both text layouts and with separate habitat labels.
+
+[Tahoma’s Microsoft documentation](https://learn.microsoft.com/en-us/typography/font-list/tahoma) describes its narrow, open design and suitability for labels. Actual tiny-print legibility depends on the printer and paper: compare digits such as 6 and 8 at actual size before choosing a font.
 
 ## Optional separate habitat label
 

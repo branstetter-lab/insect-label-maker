@@ -246,6 +246,31 @@ class LabelTests(unittest.TestCase):
                 self.assertEqual(plan['font_points'], 4)
                 self.assertEqual(plan['lines'], ['meadow', 'pan traps'])
 
+    def test_field_block_headings_and_column_continuation(self):
+        rows = [{'Field_Number': code} for code in ['EVT001', 'EVT001', 'EVT002', 'EVT001']]
+        positions = l.sheet_positions(rows, l.MIN_WIDTH, l.HEIGHT, True)
+        self.assertEqual([bool(p['heading']) for p in positions], [True, False, True, True])
+        self.assertEqual([p['heading']['field_number'] for p in positions if p['heading']],
+                         ['EVT001', 'EVT002', 'EVT001'])
+        for p in positions:
+            if p['heading']:
+                self.assertGreater(p['heading']['baseline'], p['y_points'] + l.HEIGHT)
+        long_block = l.sheet_positions([{'Field_Number': 'EVT001'}] * 400, l.MIN_WIDTH, l.HEIGHT, True)
+        self.assertGreater(long_block[-1]['page'], 1)
+        self.assertTrue(any(p['heading'] and p['heading']['continued'] for p in long_block))
+        for previous, p in zip(long_block, long_block[1:]):
+            if p['page'] != previous['page'] or p['x_points'] != previous['x_points']:
+                self.assertIsNotNone(p['heading'])
+                self.assertTrue(p['heading']['continued'])
+        self.assertTrue(all(p['heading'] is None for p in l.sheet_positions(rows, l.MIN_WIDTH, l.HEIGHT, False)))
+
+    def test_field_number_fits_beside_text(self):
+        right_edge = l.MIN_WIDTH - l.PAD - l.SIDE
+        text_edge = right_edge - l.BAR - 1.7
+        code = 'MGB4066'
+        self.assertGreater(right_edge - l.field_width(code), text_edge)
+        self.assertEqual(l.FIELD_SIZE, 4)
+
     def test_duplicate_ids_rejected(self):
         with tempfile.TemporaryDirectory() as folder:
             p = Path(folder) / 'input.xlsx'
