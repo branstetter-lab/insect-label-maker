@@ -51,11 +51,11 @@ class LabelTests(unittest.TestCase):
         self.assertEqual(lines[4], row['Collector_Label'])
         self.assertEqual(lines[5], 'rocky peak; Phacelia sp.')
 
-    def test_original_barcode_size_and_center(self):
+    def test_default_barcode_size_and_center(self):
         img = l.matrix('BBSL1207527')
         bounds = img.point(lambda p: 255 - p).getbbox()
         dark_width = (bounds[2] - bounds[0]) * l.BAR / img.width
-        self.assertAlmostEqual(dark_width / 72, .11)
+        self.assertAlmostEqual(dark_width / 72, .11 * 1.02)
         self.assertAlmostEqual(l.BAR_Y + l.BAR / 2, l.HEIGHT / 2)
         self.assertGreaterEqual(bounds[0], 2)
         self.assertGreaterEqual(img.width - bounds[2], 2)
@@ -149,7 +149,7 @@ class LabelTests(unittest.TestCase):
             row = {'Latitude': '41.91222', 'Longitude': '-111.67473', 'Uncertainty': '500'}
             text = '41.91222 -111.67473±500m'
             runs = l.coordinate_runs(row, text, 4)
-            self.assertEqual(runs[0][1:], (4, .62))
+            self.assertEqual(runs[0][1:], (4, .61))
             self.assertEqual(runs[1], ('±500m', 3.5, .75))
             limit = l.MIN_WIDTH - 2 * l.PAD - l.SIDE - l.BAR - 1.7
             self.assertLessEqual(l.run_width(runs), limit)
@@ -236,6 +236,11 @@ class LabelTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             report = json.loads(output.with_suffix('.json').read_text())
             self.assertEqual(report['physical_labels'], 442)
+            self.assertEqual(report['barcode_rendering'], 'raster')
+            self.assertEqual(report['barcode_raster_dpi'], 1200)
+            self.assertEqual(report['barcode_scale'], 1.02)
+            self.assertEqual(report['coordinate_horizontal_scale'], .61)
+            self.assertEqual(report['label_rendering'], 'vector')
             self.assertEqual(report['habitat_font_points'], 4)
             self.assertTrue(report['field_font_path'].endswith('Verdana.ttf'))
             self.assertEqual(report['field_font_points'], 4)

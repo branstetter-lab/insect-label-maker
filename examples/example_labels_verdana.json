@@ -1,4 +1,8 @@
 {
+  "label_rendering": "vector",
+  "label_raster_dpi": null,
+  "barcode_rendering": "raster",
+  "barcode_raster_dpi": 1200,
   "labels": 6,
   "separate_habitat": true,
   "physical_labels": 12,
@@ -19,7 +23,8 @@
   "habitat_font_points": 4,
   "catalog_font_points": 3.75,
   "field_font_points": 4.0,
-  "barcode_dark_symbol_inches": 0.11,
+  "barcode_scale": 1.02,
+  "barcode_dark_symbol_inches": 0.11220000000000001,
   "barcode_center_y_inches": 0.165,
   "horizontal_gap_inches": 0.02,
   "vertical_gap_inches": 0.02,

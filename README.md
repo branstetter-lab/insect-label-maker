@@ -2,7 +2,7 @@
 
 Generate print-ready insect specimen labels from an Excel workbook. The program creates one label per specimen row, with locality and collection information, a vertically oriented catalog number, a Data Matrix barcode encoding that catalog number, and a collection-event code.
 
-The tool runs locally, reads the workbook without changing it, and exports a US Letter PDF plus a JSON layout report. Text and barcodes are vector graphics, and fonts are embedded for sharp printing.
+The tool runs locally, reads the workbook without changing it, and exports a US Letter PDF plus a JSON layout report. Text uses vector graphics with embedded fonts. Barcodes default to 1200-dpi raster images, enlarged 2% together with their white margins. Label text remains vector-based. Arial coordinates use 61% horizontal scale to preserve their preferred 4-point size where the data fit.
 
 ## Files to share
 
@@ -109,6 +109,10 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | --- | --- | --- |
 | `excel` | Required | Input `.xlsx` path (positional argument). |
 | `-o`, `--output` | `output/labels.pdf` | PDF path; JSON report uses the same basename. |
+| `--barcode-rendering raster\|vector` | `raster` | 1200-dpi barcode images or vector squares. |
+| `--barcode-scale FACTOR` | `1.02` | Enlarge barcode and quiet margin together; range 1.0–1.1. |
+| `--coordinate-scale FACTOR` | `.61` Arial / `.49` Verdana | Horizontal coordinate scale; font height unchanged. |
+| `--label-rendering vector\|raster` | `vector` | Keep text vector-based, or rasterize entire labels with Poppler. |
 | `--layout lines\|flow` | `lines` | Separate-line or comma-separated wrapped layout. |
 | `--font-family arial\|verdana` | `arial` | Select matching main, catalog, habitat, italic, and bold-heading fonts. |
 | `--main-size 4\|3.5` | `4` | Preferred main-text size. `4` permits per-line fallback; `3.5` uses the smaller normal-layout profile. |
@@ -137,7 +141,7 @@ Keep the default 0.68-inch width for unit-tray compatibility. To try more vertic
 python label_maker.py "/path/to/specimens.xlsx" --layout flow --height 0.40 --output output/taller_labels.pdf
 ```
 
-The barcode and catalog number remain vertically centered, and page row counts adapt to the chosen height. A taller label can fit more wrapped lines, but it does not solve an individual text line or word that is too wide; shorten that text or use the wrapped layout. Barcode size, code font sizes, and page gaps are constants in `label_maker.py`, not command-line options. Longer catalog identifiers may require more height or a larger barcode to scan reliably.
+The barcode and catalog number remain vertically centered, and page row counts adapt to the chosen height. A taller label can fit more wrapped lines, but it does not solve an individual text line or word that is too wide; shorten that text or use the wrapped layout. Barcode scale is configurable with `--barcode-scale`; some positioning and page-gap settings remain constants in `label_maker.py`. Longer catalog identifiers may require more height or a larger barcode to scan reliably.
 
 ## All-Verdana preview
 
@@ -218,3 +222,11 @@ Each barcode is digitally decoded before export. This verifies its encoded conte
 ## Double-sided printing
 
 The tool currently exports single-sided PDFs. See [the research note](docs/double_sided_labels.md) for published guidance, practitioner discussion, and considerations for a future duplicate-on-back experiment.
+
+The default print profile uses **1200-dpi raster barcodes at 1.02 scale**, with vector text and two quiet modules on every side. Arial coordinates use .61 horizontal scale; Verdana retains .49. The preferred main font size remains 4 points, with the existing per-line 3.5-point fallback when needed. Physical label dimensions remain 0.68 × 0.33 inches.
+
+To reproduce the previous vector-barcode profile, use `--barcode-rendering vector --barcode-scale 1.0 --coordinate-scale .62` with Arial. For other experiments, `--barcode-scale` accepts 1.0–1.1 and `--coordinate-scale` overrides coordinate compression without changing font height. Enlarging a barcode also moves the text boundary; check the JSON report for font fallbacks or omitted information.
+
+To render each entire label as a single 1200-dpi image, use `--label-rendering raster`. This optional mode requires Poppler's `pdftoppm` (`brew install poppler` on macOS). The normal raster-barcode/vector-text mode does not require Poppler. Collection-code block headings remain vector text in either mode.
+
+Test a small batch whenever changing printer, paper, or driver settings. Use Actual Size / 100%, a suitable paper setting, and normal/high quality without draft or toner-saving modes. Inspect the white cells and edges under magnification and scan known codes individually and during a sweep. A successful digital decode does not guarantee print quality on every printer. The optional vector mode remains available for comparison. Existing PDF files are not changed when tool defaults change.

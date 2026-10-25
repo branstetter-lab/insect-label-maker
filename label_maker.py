@@ -3,6 +3,10 @@ import argparse
 import json
 import math
 import re
+import io
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from datetime import datetime, date
 from functools import lru_cache
@@ -11,6 +15,7 @@ import openpyxl
 import zxingcpp
 from PIL import Image, ImageOps, ImageFont
 from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
@@ -32,9 +37,10 @@ HEADING_HEIGHT = 8.0
 CATALOG_PAD = .3
 PAGE_GAP = .02 * 72
 TEXT_SCALE = .75  # condensed text; font height remains unchanged
-COORDINATE_SCALE = .62
+COORDINATE_SCALE = .61
 PAD = .5
-BAR = 7.92 * 18 / 14  # original 0.11-inch dark symbol plus two quiet modules per edge
+BAR = 7.92 * 18 / 14 * 1.02  # original 0.11-inch dark symbol plus two quiet modules per edge
+BARCODE_RENDERING = 'raster'
 SIDE = 4.43
 DEFAULT_LINES = [
     '[Country]: [StateProv], [County]',
@@ -394,13 +400,12 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
     bx = x + label_width - PAD - SIDE - BAR
     by = y + BAR_Y
     img = matrix(row['Catalog_Number'])
-    # Vector modules preserve sharp edges at printer resolution.
-    step = BAR / max(img.size)
-    for iy in range(img.height):
-        for ix in range(img.width):
-            if img.getpixel((ix, iy)) < 128:
-                pdf.rect(bx + ix * step, by + (img.height - 1 - iy) * step,
-                         step, step, fill=1, stroke=0)
+    if BARCODE_RENDERING == 'raster':
+        pixels = round(BAR / 72 * 1200)
+        raster = img.resize((pixels, pixels), Image.Resampling.NEAREST)
+        pdf.drawImage(ImageReader(raster), bx, by, width=BAR, height=BAR)
+    else:
+        draw_vector_matrix(pdf, img, bx, by)
     event = row.get('Field_Number', '')
     obj = pdf.beginText(bx + BAR - field_width(event) - FIELD_LEFT_SHIFT, y + EVENT_Y)
     obj.setFont(FIELD_FONT, FIELD_SIZE)
@@ -408,6 +413,16 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
     obj.setHorizScale(FIELD_SCALE * 100)
     obj.textOut(event)
     pdf.drawText(obj)
+
+
+def draw_vector_matrix(pdf, img, bx, by):
+    # Vector modules preserve sharp edges at printer resolution.
+    step = BAR / max(img.size)
+    for iy in range(img.height):
+        for ix in range(img.width):
+            if img.getpixel((ix, iy)) < 128:
+                pdf.rect(bx + ix * step, by + (img.height - 1 - iy) * step,
+                         step, step, fill=1, stroke=0)
 
 
 def separate_habitat_templates(templates):
@@ -556,7 +571,30 @@ def draw_field_heading(pdf, heading, label_width):
 
 
 
+def draw_raster_label(pdf, draw, x, y, label_width, label_height):
+    """Embed one complete label image at 1200 dpi, without a text layer."""
+    with tempfile.TemporaryDirectory(prefix='label-raster-') as directory:
+        source = Path(directory) / 'label.pdf'
+        small = canvas.Canvas(str(source), pagesize=(label_width, label_height))
+        draw(small)
+        small.save()
+        result = subprocess.run(
+            ['pdftoppm', '-r', '1200', '-singlefile', '-png', str(source)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        img = Image.open(io.BytesIO(result.stdout)).convert('RGB')
+        pdf.drawImage(ImageReader(img), x, y, width=label_width, height=label_height)
+
+
 def generate(args):
+    global BARCODE_RENDERING, BAR
+    barcode_scale = getattr(args, 'barcode_scale', 1.02)
+    if not math.isfinite(barcode_scale) or not 1 <= barcode_scale <= 1.1:
+        raise ValueError('--barcode-scale must be between 1.0 and 1.1.')
+    BAR = 7.92 * 18 / 14 * barcode_scale
+    BARCODE_RENDERING = getattr(args, 'barcode_rendering', 'raster')
+    label_rendering = getattr(args, 'label_rendering', 'vector')
+    if label_rendering == 'raster' and not shutil.which('pdftoppm'):
+        raise ValueError('Whole-label raster rendering requires pdftoppm (Poppler). On macOS: brew install poppler.')
     global MAIN_SIZE, FONT_PATH, LAYOUT_MODE, ITALIC_FONT_PATH, FIELD_SIZE, FIELD_FONT, TEXT_SCALE, COORDINATE_SCALE
     configure_dimensions(args.width, args.height, args.max_width)
     FIELD_SIZE = args.field_size
@@ -564,7 +602,12 @@ def generate(args):
     LAYOUT_MODE = args.layout
     family = 'Verdana' if args.font_family == 'verdana' else 'Arial'
     TEXT_SCALE = .70 if family == 'Verdana' else .75
-    COORDINATE_SCALE = .49 if family == 'Verdana' else .62
+    COORDINATE_SCALE = .49 if family == 'Verdana' else .61
+    coordinate_scale = getattr(args, 'coordinate_scale', None)
+    if coordinate_scale is not None:
+        if not math.isfinite(coordinate_scale) or not 0 < coordinate_scale <= 1:
+            raise ValueError('--coordinate-scale must be greater than zero and at most 1.')
+        COORDINATE_SCALE = coordinate_scale
     font = Path(args.font) if args.font else Path('/System/Library/Fonts/Supplemental') / (family + '.ttf')
     FONT_PATH = str(font)
     ink_font.cache_clear()
@@ -638,13 +681,19 @@ def generate(args):
         x, y = placement['x_points'], placement['y_points']
         if placement['heading']:
             draw_field_heading(pdf, placement['heading'], common_width)
-        draw_label(pdf, row, lines, x, y, common_width, args.guides)
+        if label_rendering == 'raster':
+            draw_raster_label(pdf, lambda small: draw_label(small, row, lines, 0, 0, common_width, args.guides), x, y, common_width, HEIGHT)
+        else:
+            draw_label(pdf, row, lines, x, y, common_width, args.guides)
         habitat_report = None
         if args.separate_habitat:
             habitat_report = dict(habitat_plans[index])
             habitat_report.update(page=placement['page'], x_points=x,
                                   y_points=y - habitat_gap - habitat_height)
-            draw_habitat_label(pdf, habitat_report, x, habitat_report['y_points'], args.habitat_width * 72, args.guides)
+            if label_rendering == 'raster':
+                draw_raster_label(pdf, lambda small: draw_habitat_label(small, habitat_report, 0, 0, args.habitat_width * 72, args.guides), x, habitat_report['y_points'], args.habitat_width * 72, habitat_height)
+            else:
+                draw_habitat_label(pdf, habitat_report, x, habitat_report['y_points'], args.habitat_width * 72, args.guides)
         report.append({'excel_row': row['_excel_row'], 'catalog_number': row['Catalog_Number'],
                        'field_number': row.get('Field_Number', ''),
                        'uncertainty_omitted': bool(row.get('Uncertainty')) and not keep,
@@ -654,7 +703,7 @@ def generate(args):
                        'habitat_label': habitat_report, 'placement': placement})
     pdf.save()
     temp.replace(output)
-    summary = {'labels': len(rows), 'separate_habitat': args.separate_habitat,
+    summary = {'label_rendering': label_rendering, 'label_raster_dpi': 1200 if label_rendering == 'raster' else None, 'barcode_rendering': BARCODE_RENDERING, 'barcode_raster_dpi': 1200 if BARCODE_RENDERING == 'raster' else None, 'labels': len(rows), 'separate_habitat': args.separate_habitat,
                'physical_labels': len(rows) * (2 if args.separate_habitat else 1),
                'habitat_label_width_inches': args.habitat_width if args.separate_habitat else None,
                'habitat_max_lines': args.habitat_max_lines if args.separate_habitat else None,
@@ -662,7 +711,7 @@ def generate(args):
                'habitat_label_gap_inches': args.habitat_gap if args.separate_habitat else None, 'width_inches': common_width / 72, 'height_inches': HEIGHT / 72,
                'field_headings': not args.no_field_headings, 'field_font_path': str(field_path),
                'field_font_horizontal_scale': FIELD_SCALE, 'field_left_shift_points': FIELD_LEFT_SHIFT, 'habitat_field_gap_points': HABITAT_FIELD_GAP, 'layout': LAYOUT_MODE, 'font': pdfmetrics.getFont('LabelRegular').face.familyName.decode('utf-8', errors='replace'), 'font_points': MAIN_SIZE, 'habitat_font_points': 4 if args.separate_habitat else SIZE, 'catalog_font_points': CATALOG_SIZE, 'field_font_points': FIELD_SIZE,
-               'barcode_dark_symbol_inches': 0.11, 'barcode_center_y_inches': HEIGHT / 144,
+               'barcode_scale': barcode_scale, 'barcode_dark_symbol_inches': 0.11 * barcode_scale, 'barcode_center_y_inches': HEIGHT / 144,
                'horizontal_gap_inches': gap / 72, 'vertical_gap_inches': gap / 72, 'text_horizontal_scale': TEXT_SCALE, 'coordinate_horizontal_scale': COORDINATE_SCALE, 'barcode': 'Data Matrix',
                'macrohabitat_omitted_count': sum(r['macrohabitat_omitted'] for r in report),
                'uncertainty_omitted_count': sum(r['uncertainty_omitted'] for r in report), 'records': report}
@@ -679,6 +728,10 @@ def generate(args):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('excel')
+    p.add_argument('--coordinate-scale', type=float, help='Override coordinate horizontal scale (0–1); font height is unchanged')
+    p.add_argument('--barcode-scale', type=float, default=1.02, help='Scale barcode and quiet margin together (1.0–1.1); text clearance adapts')
+    p.add_argument('--label-rendering', choices=['vector', 'raster'], default='vector', help='Render each complete label as a 1200-dpi image (requires Poppler); headings stay vector')
+    p.add_argument('--barcode-rendering', choices=['vector', 'raster'], default='raster', help='Barcode rendering; raster embeds a 1200-dpi image with unchanged size and quiet margin')
     p.add_argument('-o', '--output', default='output/labels.pdf')
     p.add_argument('--sheet')
     p.add_argument('--layout', choices=['lines', 'flow'], default='lines', help='Separate fields into lines, or wrap comma-separated fields')
