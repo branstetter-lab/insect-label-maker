@@ -4,11 +4,21 @@ Generate print-ready insect specimen labels from an Excel workbook. The program 
 
 The tool runs locally, reads the workbook without changing it, and exports a US Letter PDF plus a JSON layout report. Text uses vector graphics with embedded fonts. Barcodes default to 1200-dpi raster images, enlarged 2% together with their white margins. Label text remains vector-based. Arial coordinates use 61% horizontal scale to preserve their preferred 4-point size where the data fit.
 
+## Example labels
+
+These enlarged previews use fictional specimen data. Download the PDFs for printing; do not print the PNG previews as labels.
+
+| Separate lines | Wrapped text | Separate habitat label |
+| --- | --- | --- |
+| <img src="docs/images/labels_lines.png" width="160" alt="Six example specimen labels with separate field lines"> | <img src="docs/images/labels_flow.png" width="160" alt="Six example labels with wrapped text"> | <img src="docs/images/labels_separate_habitat.png" width="160" alt="Six main labels paired with smaller habitat labels"> |
+| [Print PDF](examples/example_labels_lines.pdf) | [Print PDF](examples/example_labels_flow.pdf) | [Print PDF](examples/example_labels_separate_habitat.pdf) |
+
 ## Files to share
 
 - `label_maker.py` — main Python script.
 - `requirements.txt` — Python dependencies.
-- `label_template.json` — editable field order and punctuation.
+- `templates/label_input_template.xlsx` — blank Excel input with only the 14 printed/encoded label fields; header comments explain each field.
+- `label_template.json` — editable field order and punctuation (not the Excel input template).
 - `examples/` — fictional example data, PDFs for both layouts and separate habitat labels, and their reports.
 - `README.md` — these instructions.
 
@@ -47,6 +57,8 @@ Typical Windows paths are `C:\Windows\Fonts\arial.ttf` and `C:\Windows\Fonts\ari
 
 ## Prepare the Excel file
 
+Start with [the blank Excel template](templates/label_input_template.xlsx), or copy [the six fictional example specimens](examples/example_specimens.xlsx). The blank template contains no real specimen data and needs no Symbiota-only columns, specimen counts, or processing-status fields. Enter one row per specimen, repeating event information as needed. Header comments provide examples.
+
 Use an `.xlsx` workbook with column headers in the first row and one specimen per subsequent row. Column order does not matter; header spelling and capitalization do. Extra columns are ignored unless referenced in the template. The active worksheet is used unless `--sheet` selects another.
 
 The supplied template uses these columns:
@@ -74,7 +86,15 @@ Keep the full scientific data in other columns and use the label-specific fields
 
 ## Generate labels
 
-Normal layout:
+After filling and saving a copy of the blank template:
+
+```sh
+python label_maker.py "my_specimens.xlsx" --output output/my_labels.pdf
+```
+
+The default layout uses all 14 fields from the Excel template. `label_template.json` is only needed when customizing field order or punctuation. The tool creates labels; it does not allocate catalog numbers, expand specimen counts, or create a complete Symbiota import file.
+
+Normal layout with an explicit layout template:
 
 ```sh
 python label_maker.py "/path/to/specimens.xlsx" --template label_template.json --output output/labels_lines.pdf
@@ -97,7 +117,7 @@ Both layouts default to **0.68 × 0.33-inch labels**, with 0.02-inch horizontal/
 
 All main and habitat text stays behind an invisible boundary left of the barcode, including above and below it. Habitat text also stops at least 1.5 points before the actual Field Number, so long codes cannot crowd it. Catalog and field numbers have separate positions. The Data Matrix is vertically centered; catalog text is 3.75 points and field-number text defaults to 4 points. The Field Number uses Verdana when available, otherwise Arial, with its own 60% horizontal scale to stay clear of the main text and barcode. The Field Number is right-aligned in its reserved space. Habitat text on the main label has a stricter right boundary that guarantees at least 1.5 points of horizontal separation from the Field Number.
 
-Text normally uses 75% horizontal scale. In the standard normal layout, latitude/longitude beside uncertainty uses 62% scale, and the uncertainty term is always 3.5 points. The coordinate line stays on line 3; elevation/date stay on line 4.
+Text normally uses 75% horizontal scale. In the standard normal layout, latitude/longitude beside uncertainty uses 61% scale, and the uncertainty term is always 3.5 points. The coordinate line stays on line 3; elevation/date stay on line 4.
 
 The program first tries to retain all information, then may omit coordinate uncertainty. For the standard habitat template, if the label still cannot fit, it tries microhabitat alone. It never automatically removes microhabitat. The JSON report records omitted uncertainty/macrohabitat, rendered lines, font sizes, positions, and text runs. Review that report when completeness matters. These fallbacks can differ between the two layouts.
 
@@ -219,9 +239,26 @@ Print at **100% / Actual Size**, with “Fit to page” disabled. Use normal/hig
 
 Each barcode is digitally decoded before export. This verifies its encoded content; physical print-and-scan testing checks the printer, paper, and scanner together.
 
+## Printer and paper used in the lab
+
+The lab's reported printing setup is:
+
+| Item | Setup |
+| --- | --- |
+| Printer | **Brother HL-L6210DW**, monochrome laser printer |
+| Paper | **Mohawk archival cardstock**, as reported by the lab |
+| Paper weight / exact product | **Not yet confirmed**; will be added after checking the package |
+| Scaling | **Actual Size / 100%**, with Fit to page disabled |
+
+Earlier laser-printed labels on this cardstock scanned successfully in the lab. Home inkjet tests showed differences in barcode appearance and recognition, motivating the raster-barcode option. The current default is based on the reviewed print comparisons, not a formal print-quality certification. Archive suitability of ink/toner and paper should be established for each collection's materials; the precise Mohawk stock has not yet been documented here.
+
+Other printers can be used, but matching the model name or nominal resolution alone does not guarantee the same result. On each printer/paper combination, print a small batch, measure the label dimensions, inspect the black and white cells, and scan both individually and during normal specimen handling before printing a large batch. Do not assume screen zoom accurately represents printed barcode thickness.
+
 ## Double-sided printing
 
 The tool currently exports single-sided PDFs. See [the research note](docs/double_sided_labels.md) for published guidance, practitioner discussion, and considerations for a future duplicate-on-back experiment.
+
+## Barcode rendering options
 
 The default print profile uses **1200-dpi raster barcodes at 1.02 scale**, with vector text and two quiet modules on every side. Arial coordinates use .61 horizontal scale; Verdana retains .49. The preferred main font size remains 4 points, with the existing per-line 3.5-point fallback when needed. Physical label dimensions remain 0.68 × 0.33 inches.
 
