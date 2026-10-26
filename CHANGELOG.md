@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Keep latitude/longitude and uncertainty together in wrapped layouts and apply coordinate-specific compression during fitting and rendering.
+
 - Require 1200-dpi raster Data Matrix barcodes in every label mode; vector label text remains the default.
 
 - Added optional sampling protocol on separate habitat labels, retaining the three-line limit.

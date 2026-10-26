@@ -132,11 +132,14 @@ class LabelTests(unittest.TestCase):
             joined = ' '.join(flow)
             boundary_width = l.MIN_WIDTH - 2 * l.PAD - l.SIDE - l.BAR - 1.7
             for text, size in zip(flow, flow.sizes):
-                self.assertLessEqual(l.width(text, size), boundary_width)
+                self.assertLessEqual(l.run_width(l.coordinate_runs(row, text, size)), boundary_width)
+            coordinate_lines = [text for text in flow if row['Latitude'] in text or row['Longitude'] in text]
+            self.assertEqual(len(coordinate_lines), 1)
+            self.assertIn(row['Latitude'] + ' ' + row['Longitude'], coordinate_lines[0])
             for value in ['Naomi Peak', '±100m', 'M.Branstetter, T.Griswold', 'rocky peak, Phacelia sp.']:
                 self.assertIn(value, joined)
             for text, size, baseline in zip(flow, flow.sizes, flow.baselines):
-                self.assertLessEqual(l.width(text, size), l.available_at(l.MIN_WIDTH, baseline, text, size, row['Field_Number']))
+                self.assertLessEqual(l.run_width(l.coordinate_runs(row, text, size)), l.available_at(l.MIN_WIDTH, baseline, text, size, row['Field_Number']))
                 if 'Phacelia' in text:
                     self.assertEqual(size, 3.5)
         finally:

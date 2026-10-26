@@ -33,13 +33,13 @@
   "coordinate_horizontal_scale": 0.61,
   "barcode": "Data Matrix",
   "macrohabitat_omitted_count": 0,
-  "uncertainty_omitted_count": 1,
+  "uncertainty_omitted_count": 0,
   "records": [
     {
       "excel_row": 2,
       "catalog_number": "BBSL1207977",
       "field_number": "MGB4209",
-      "uncertainty_omitted": true,
+      "uncertainty_omitted": false,
       "macrohabitat_omitted": false,
       "line_text_runs": [
         [
@@ -58,28 +58,38 @@
         ],
         [
           [
-            "41.89971",
-            4,
-            0.75
-          ]
-        ],
-        [
+            "41.89971 -111.64205",
+            3.5,
+            0.61
+          ],
           [
-            "-111.64205, 2500m,",
+            "\u00b1200m",
+            3.5,
+            0.75
+          ],
+          [
+            ",",
             3.5,
             0.75
           ]
         ],
         [
           [
-            "24Jun2022, M.Branstetter,",
+            "2500m, 24Jun2022,",
             3.5,
             0.75
           ]
         ],
         [
           [
-            "C.Meidt, alpine meadow,",
+            "M.Branstetter, C.Meidt,",
+            3.5,
+            0.75
+          ]
+        ],
+        [
+          [
+            "alpine meadow,",
             3.5,
             0.75
           ]
@@ -95,7 +105,7 @@
       "line_font_points": [
         4,
         3.5,
-        4,
+        3.5,
         3.5,
         3.5,
         3.5,
@@ -104,19 +114,19 @@
       "line_baselines": [
         20.547,
         17.211000000000002,
-        13.379000000000001,
-        10.594,
-        7.362,
-        4.0969999999999995,
-        0.6320000000000001
+        13.738000000000001,
+        10.506,
+        7.241,
+        4.019,
+        0.5540000000000003
       ],
       "lines": [
         "USA: UT, Cache Co.,",
         "Tony Grove, 0.5km NNE,",
-        "41.89971",
-        "-111.64205, 2500m,",
-        "24Jun2022, M.Branstetter,",
-        "C.Meidt, alpine meadow,",
+        "41.89971 -111.64205\u00b1200m,",
+        "2500m, 24Jun2022,",
+        "M.Branstetter, C.Meidt,",
+        "alpine meadow,",
         "Taraxacum officinale"
       ],
       "habitat_label": null,

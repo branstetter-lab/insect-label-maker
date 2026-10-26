@@ -150,6 +150,17 @@ def label_italic_ranges(lines, microhabitat):
 def coordinate_runs(row, line, size):
     coordinates = f"{row.get('Latitude', '')} {row.get('Longitude', '')}"
     uncertainty = f"±{row.get('Uncertainty', '')}m"
+    if LAYOUT_MODE == 'flow' and row.get('Latitude') and row.get('Longitude') and coordinates in line:
+        start = line.index(coordinates)
+        finish = start + len(coordinates)
+        runs = [(line[:start], size, TEXT_SCALE)] if start else []
+        runs.append((coordinates, size, COORDINATE_SCALE))
+        if row.get('Uncertainty') and line[finish:].startswith(uncertainty):
+            runs.append((uncertainty, 3.5, TEXT_SCALE))
+            finish += len(uncertainty)
+        if finish < len(line):
+            runs.append((line[finish:], size, TEXT_SCALE))
+        return runs
     if (LAYOUT_MODE == 'lines' and row.get('Uncertainty')
             and line == coordinates + uncertainty):
         return [(coordinates, size, COORDINATE_SCALE), (uncertainty, 3.5, TEXT_SCALE)]
@@ -261,6 +272,9 @@ def flow_layout(row, templates, label_width, uncertainty):
         if not field:
             continue
         parts = field.replace(';', ',').split()
+        # Coordinates (and their uncertainty) form one unbreakable unit.
+        if '[Latitude]' in templates[i] and '[Longitude]' in templates[i]:
+            parts = [' '.join(parts)]
         if words:
             old, tag = words[-1]
             words[-1] = (old.rstrip(',') + ',', tag)
@@ -286,7 +300,8 @@ def flow_layout(row, templates, label_width, uncertainty):
                 available = available_at(label_width, baseline, text, size, row.get('Field_Number', ''))
                 if any(is_habitat for _, is_habitat in words[start:end]):
                     available = min(available, habitat_available(label_width, row.get('Field_Number', '')))
-                if fit_width(text, size) <= available:
+                measured = run_width(coordinate_runs(row, text, size)) if row.get('Latitude') and row.get('Longitude') and f"{row['Latitude']} {row['Longitude']}" in text else fit_width(text, size)
+                if measured <= available:
                     candidates.append((end, text, baseline, below))
             for end, text, baseline, below in reversed(candidates):
                 rest = fit(end, round((baseline - below - .22) * 1000), depth + 1)
