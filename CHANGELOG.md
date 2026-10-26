@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Require 1200-dpi raster Data Matrix barcodes in every label mode; vector label text remains the default.
+
 - Added optional sampling protocol on separate habitat labels, retaining the three-line limit.
 - Added compact pin-barcode labels with blank pin space and the main label’s barcode size.
 - Added a seven-layout printable sampler, filled workbook, and matching blank all-options template.

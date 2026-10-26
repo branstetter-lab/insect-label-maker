@@ -400,12 +400,7 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
     bx = x + label_width - PAD - SIDE - BAR
     by = y + BAR_Y
     img = matrix(row['Catalog_Number'])
-    if BARCODE_RENDERING == 'raster':
-        pixels = round(BAR / 72 * 1200)
-        raster = img.resize((pixels, pixels), Image.Resampling.NEAREST)
-        pdf.drawImage(ImageReader(raster), bx, by, width=BAR, height=BAR)
-    else:
-        draw_vector_matrix(pdf, img, bx, by)
+    draw_raster_matrix(pdf, img, bx, by)
     event = row.get('Field_Number', '')
     obj = pdf.beginText(bx + BAR - field_width(event) - FIELD_LEFT_SHIFT, y + EVENT_Y)
     obj.setFont(FIELD_FONT, FIELD_SIZE)
@@ -415,14 +410,11 @@ def draw_label(pdf, row, lines, x, y, label_width, guides=False):
     pdf.drawText(obj)
 
 
-def draw_vector_matrix(pdf, img, bx, by):
-    # Vector modules preserve sharp edges at printer resolution.
-    step = BAR / max(img.size)
-    for iy in range(img.height):
-        for ix in range(img.width):
-            if img.getpixel((ix, iy)) < 128:
-                pdf.rect(bx + ix * step, by + (img.height - 1 - iy) * step,
-                         step, step, fill=1, stroke=0)
+def draw_raster_matrix(pdf, img, bx, by):
+    """All Data Matrix symbols are embedded as nearest-neighbor 1200-dpi images."""
+    pixels = round(BAR / 72 * 1200)
+    raster = img.resize((pixels, pixels), Image.Resampling.NEAREST)
+    pdf.drawImage(ImageReader(raster), bx, by, width=BAR, height=BAR)
 
 
 def separate_habitat_templates(templates):
@@ -663,11 +655,7 @@ def draw_special_label(pdf, row, plan, x, y, label_width, guides, show_catalog):
         end = line['italic_end']
         draw_text(pdf,x+PAD,y+line['baseline'],line['text'],size=4,italic_ranges=[(0,end)] if end else ())
     bx=x+label_width-PAD-SIDE-BAR
-    if BARCODE_RENDERING == 'raster':
-        image=matrix(row['Catalog_Number']).resize((round(BAR/72*1200),)*2,Image.Resampling.NEAREST)
-        pdf.drawImage(ImageReader(image),bx,y+BAR_Y,width=BAR,height=BAR)
-    else:
-        draw_vector_matrix(pdf,matrix(row['Catalog_Number']),bx,y+BAR_Y)
+    draw_raster_matrix(pdf, matrix(row['Catalog_Number']), bx, y+BAR_Y)
     if show_catalog:
         length=pdfmetrics.stringWidth(row['Catalog_Number'],'LabelRegular',4)*.65
         pdf.saveState();pdf.translate(x+label_width-PAD-.75,y+(HEIGHT-length)/2);pdf.rotate(90)
@@ -712,7 +700,9 @@ def generate(args):
     if not math.isfinite(barcode_scale) or not 1 <= barcode_scale <= 1.1:
         raise ValueError('--barcode-scale must be between 1.0 and 1.1.')
     BAR = 7.92 * 18 / 14 * barcode_scale
-    BARCODE_RENDERING = getattr(args, 'barcode_rendering', 'raster')
+    if getattr(args, 'barcode_rendering', 'raster') != 'raster':
+        raise ValueError('Data Matrix barcodes must use 1200-dpi raster rendering.')
+    BARCODE_RENDERING = 'raster'
     label_rendering = getattr(args, 'label_rendering', 'vector')
     if label_rendering == 'raster' and not shutil.which('pdftoppm'):
         raise ValueError('Whole-label raster rendering requires pdftoppm (Poppler). On macOS: brew install poppler.')
@@ -862,7 +852,7 @@ def main():
     p.add_argument('--coordinate-scale', type=float, help='Override coordinate horizontal scale (0–1); font height is unchanged')
     p.add_argument('--barcode-scale', type=float, default=None, help='Scale barcode and quiet margin together (1.0–1.1); text clearance adapts')
     p.add_argument('--label-rendering', choices=['vector', 'raster'], default='vector', help='Render each complete label as a 1200-dpi image (requires Poppler); headings stay vector')
-    p.add_argument('--barcode-rendering', choices=['vector', 'raster'], default='raster', help='Barcode rendering; raster embeds a 1200-dpi image with unchanged size and quiet margin')
+    p.add_argument('--barcode-rendering', choices=['raster'], default='raster', help='Compatibility option: all barcodes use 1200-dpi raster images')
     p.add_argument('-o', '--output', default='output/labels.pdf')
     p.add_argument('--sheet')
     p.add_argument('--layout', choices=['lines', 'flow'], default='lines', help='Separate fields into lines, or wrap comma-separated fields')

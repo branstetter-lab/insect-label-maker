@@ -60,6 +60,8 @@ class SpecialLabels(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             d=json.loads(out.with_suffix('.json').read_text())
             self.assertEqual(d['barcode_scale'],1.02)
+            self.assertEqual(d['barcode_rendering'],'raster')
+            self.assertEqual(d['barcode_raster_dpi'],1200)
             self.assertEqual(d['records'][0]['lines'],[])
             self.assertGreaterEqual(d['pin_blank_width_inches'],.08)
             self.assertEqual(PdfReader(out).pages[0].extract_text().strip(),'CASENT1234567')
@@ -79,4 +81,9 @@ class SpecialLabels(unittest.TestCase):
         row['Sampling_Protocol']='net sweep repeated over a very long meadow path'
         with self.assertRaisesRegex(ValueError,'maximum is 3'):
             l.habitat_label_plan(row,.62*72,.20*72,include_method=True)
+    def test_vector_barcode_option_is_rejected(self):
+        with tempfile.TemporaryDirectory() as root:
+            result,_=self.run_mode(root,['Catalog_Number'],[['DEMO000001']],'barcode','--barcode-rendering','vector')
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('invalid choice',result.stderr)
 if __name__=='__main__':unittest.main()
