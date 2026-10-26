@@ -18,17 +18,17 @@
       "excel_row": 2,
       "lines": [
         {
-          "text": "Lasius niger (Linnaeus,",
+          "text": "Lasius niger",
           "italic_end": 12,
           "baseline": 15.080000000000002
         },
         {
-          "text": "1758)",
+          "text": "(Linnaeus, 1758)",
           "italic_end": 0,
           "baseline": 10.580000000000002
         },
         {
-          "text": "A. Smith 2026",
+          "text": "Det. A. Smith 2026",
           "italic_end": 0,
           "baseline": 6.080000000000002
         }
@@ -55,7 +55,7 @@
           "baseline": 10.580000000000002
         },
         {
-          "text": "B. Jones 2026",
+          "text": "Det. B. Jones 2026",
           "italic_end": 0,
           "baseline": 6.080000000000002
         }
@@ -77,7 +77,7 @@
           "baseline": 12.830000000000002
         },
         {
-          "text": "A. Smith 2026",
+          "text": "Det. A. Smith 2026",
           "italic_end": 0,
           "baseline": 8.330000000000002
         }

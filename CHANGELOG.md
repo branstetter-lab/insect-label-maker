@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Determination labels prefix the determiner with “Det.” and start the authority on a new line when it cannot fit with the taxon.
+
 - Adopted the display name Pittacia Insectorum; existing script and repository paths are unchanged.
 - Added compact generic barcode labels and determination labels with Data Matrix and 4-point catalog numbers, with input templates and fictional examples.
 - New modes omit collection-event codes and use a 1.05 barcode scale; locality-mode defaults are unchanged.

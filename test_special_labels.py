@@ -36,7 +36,15 @@ class SpecialLabels(unittest.TestCase):
             self.assertEqual(result.returncode,0,result.stderr)
             report=json.loads(out.with_suffix('.json').read_text());lines=report['records'][0]['lines']
             self.assertEqual(lines[0]['italic_end'],12)  # Genus and species, not authority.
-            self.assertIn('A. Smith 2026',PdfReader(out).pages[0].extract_text())
+            self.assertEqual(lines[0]['text'], 'Lasius niger')
+            self.assertEqual(lines[1]['text'], '(Linnaeus, 1758)')
+            self.assertEqual(lines[1]['italic_end'], 0)
+            self.assertIn('Det. A. Smith 2026',PdfReader(out).pages[0].extract_text())
+            result,out=self.run_mode(root,['Catalog_Number','Genus','Species','Author','Determiner_Label'],[['DEMO000001','Lasius','niger','L.','Det. A. Smith 2026']],'determination')
+            self.assertEqual(result.returncode,0,result.stderr)
+            lines=json.loads(out.with_suffix('.json').read_text())['records'][0]['lines']
+            self.assertEqual(lines[0]['text'], 'Lasius niger L.')
+            self.assertNotIn('Det. Det.', PdfReader(out).pages[0].extract_text())
             result,out=self.run_mode(root,['Catalog_Number','Genus','Species'],[['DEMO000001','Lasius','niger']],'determination')
             self.assertNotEqual(result.returncode,0);self.assertIn('Determiner_Label is required',result.stderr)
     def test_unknown_taxon_qualifier_stays_upright_and_fit_errors(self):

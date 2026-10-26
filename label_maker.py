@@ -600,7 +600,16 @@ def special_label_plan(row, mode, label_width, show_catalog=True):
             if not row.get(key):
                 raise ValueError(f"Excel row {row['_excel_row']}: {key} is required for determination labels.")
         name = row['Genus'] + ' ' + row['Species']
-        blocks = [(name + (' ' + row['Author'] if row.get('Author') else ''), True), (row['Determiner_Label'], False)]
+        author = row.get('Author', '')
+        full_name = name + (' ' + author if author else '')
+        if author and fit_width(full_name, 4) > available:
+            blocks = [(name, True), (author, False)]
+        else:
+            blocks = [(full_name, True)]
+        determiner = row['Determiner_Label']
+        if not re.match(r'^Det\.\s', determiner, re.IGNORECASE):
+            determiner = 'Det. ' + determiner
+        blocks.append((determiner, False))
     lines = []
     for text, scientific in blocks:
         offset = 0
