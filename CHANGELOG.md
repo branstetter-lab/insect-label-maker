@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added optional sampling protocol on separate habitat labels, retaining the three-line limit.
+- Added compact pin-barcode labels with blank pin space and the main label’s barcode size.
+- Added a seven-layout printable sampler, filled workbook, and matching blank all-options template.
+
 - Determination labels prefix the determiner with “Det.” and start the authority on a new line when it cannot fit with the taxon.
 
 - Adopted the display name Pittacia Insectorum; existing script and repository paths are unchanged.

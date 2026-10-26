@@ -6,6 +6,12 @@ Generate print-ready insect specimen labels from an Excel workbook. The program 
 
 The tool runs locally, reads the workbook without changing it, and exports a US Letter PDF plus a JSON layout report. Text uses vector graphics with embedded fonts. Barcodes default to 1200-dpi raster images. Label text remains vector-based. Arial coordinates use 61% horizontal scale to preserve their preferred 4-point size where the data fit.
 
+## Try all label options
+
+Download the [printable seven-layout sampler](examples/label_options_sampler.pdf) and [filled example workbook](examples/label_options_examples.xlsx). Each layout has its own worksheet; the Instructions worksheet lists the corresponding command options. The sampler shows actual-size labels with light boundary guides, using fictional data and intentionally repeated catalog IDs. Print at 100%, not Fit to page.
+
+The [blank all-options workbook](templates/all_options_input_template.xlsx) contains matching empty worksheets. Select the worksheet with `--sheet`, and use the flags listed on its Instructions worksheet. These are alternative views of the same example records, not seven new specimen sets.
+
 ## Example labels
 
 These enlarged previews use fictional specimen data. Download the PDFs for printing; do not print the PNG previews as labels.
@@ -94,6 +100,14 @@ Keep the full scientific data in other columns and use the label-specific fields
 
 These modes need no collection/locality data. Each row still needs its own unique, preassigned `Catalog_Number`; the tool does not reserve numbers or assign the same barcode to multiple cataloged units. A cataloged unit may be a pin or vial rather than an individual insect.
 
+### Small pin-barcode labels
+
+```sh
+python label_maker.py examples/example_barcodes.xlsx --mode pin-barcode --output output/pin_barcodes.pdf
+```
+
+This mode prints only the matrix and vertical **4-point Catalog Number**, with blank space to the left for a pin. The default is **0.32 × 0.30 inches**. It uses the same barcode scale as the main locality label (1.02), including the two-module white margin. At the default size the blank left area is about 0.107 inches (2.7 mm) wide; the tool requires at least 0.08 inches of pin space before the barcode margin. Keep the pin and its shadow clear of the barcode and quiet margin. No pinhole mark is printed. Use the [barcode input template](templates/barcodes_input_template.xlsx); only `Catalog_Number` is needed. [Printable pin-barcode example](examples/example_labels_pin_barcode.pdf).
+
 ### Generic barcode labels
 
 Use [the barcode input template](templates/barcodes_input_template.xlsx), containing only `Catalog_Number`, or try [the fictional example](examples/example_barcodes.xlsx):
@@ -122,9 +136,17 @@ python label_maker.py examples/example_determinations.xlsx --mode determination 
 
 The default is **0.68 × 0.33 inches**, with the taxon and authority followed by `Det.` and the determiner. If the taxon and authority do not fit together, the authority starts on a new line rather than sharing the genus/species line. Longer names or authorities can wrap further as needed. `Det.` is added automatically unless already present. Genus/species are italic; `sp.`, `spp.`, `indet`, authorities, and determiner text remain upright. Text wraps beside the barcode and is vertically centered. All text is 4 points; these modes stop with a fit error rather than shrink or omit determination information. [Printable example](examples/example_labels_determinations.pdf).
 
-Both modes default to **1.05 barcode scale** relative to the original 0.11-inch dark symbol, with quiet margins enlarged together, raster barcodes and vector text. The Catalog Number uses 65% horizontal scale at 4 points to fit compact labels. Use `--width`, `--height`, or `--barcode-scale` to override dimensions; width never exceeds 0.68 inch. Longer IDs or taxon names may need greater height or shorter display wording. `--guides` adds light cutting rectangles. `--omit-catalog-text` is an optional special-mode switch to hide the human-readable code only; the unique value is still required and encoded. These modes do not accept `--template` or `--separate-habitat`.
+Generic barcode and determination modes default to **1.05 barcode scale** relative to the original 0.11-inch dark symbol, with quiet margins enlarged together, raster barcodes and vector text. The Catalog Number uses 65% horizontal scale at 4 points to fit compact labels. Use `--width`, `--height`, or `--barcode-scale` to override dimensions; width never exceeds 0.68 inch. Longer IDs or taxon names may need greater height or shorter display wording. `--guides` adds light cutting rectangles. `--omit-catalog-text` is an optional special-mode switch to hide the human-readable code only; the unique value is still required and encoded. These modes do not accept `--template` or `--separate-habitat`.
 
 For existing collection labels and retroactive data entry, verify that the determination barcode matches the code already assigned to the pin/vial before printing.
+
+### Optional method on the separate habitat label
+
+```sh
+python label_maker.py input.xlsx --separate-habitat --include-method --output output/labels_with_method.pdf
+```
+
+`--include-method` adds the sampling protocol after macrohabitat and microhabitat on the smaller label. It uses the first nonempty value from `Sampling_Protocol_Label`, `Sampling_Protocol`, or `Method`. At least one of those headers must be present; blank values add no method line. The text stays **4 pt**, left aligned, with the whole block vertically centered. The existing **three physical lines total** limit applies to all three fields together. Long fields can wrap, but a batch that needs more than three lines stops rather than omitting data. The default two-label mode is unchanged when this option is absent. [Printable example](examples/example_labels_habitat_method.pdf).
 
 ## Generate labels
 
@@ -172,7 +194,7 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `excel` | Required | Input `.xlsx` path (positional argument). |
 | `-o`, `--output` | `output/labels.pdf` | PDF path; JSON report uses the same basename. |
 | `--barcode-rendering raster\|vector` | `raster` | 1200-dpi barcode images or vector squares. |
-| `--mode locality\|barcode\|determination` | `locality` | Choose collection, generic identifier, or determination labels. |
+| `--mode locality\|barcode\|determination\|pin-barcode` | `locality` | Choose collection, generic identifier, or determination labels. |
 | `--omit-catalog-text` | Off | Hide printed catalog text in barcode/determination modes only. |
 | `--barcode-scale FACTOR` | `1.02` locality; `1.05` special modes | Enlarge barcode and quiet margin together; range 1.0–1.1. |
 | `--coordinate-scale FACTOR` | `.61` Arial / `.49` Verdana | Horizontal coordinate scale; font height unchanged. |
@@ -189,6 +211,7 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `--field-font PATH` | Verdana if available, otherwise Arial | Optional `.ttf` font for Field Numbers only. |
 | `--heading-font PATH` | Arial Bold beside the regular font | Bold `.ttf` for the field block headings. |
 | `--no-field-headings` | Off | Disable the field block headings. |
+| `--include-method` | Off | Include sampling protocol on the separate habitat label; requires `--separate-habitat`. |
 | `--separate-habitat` | Off | Put macrohabitat and microhabitat on a smaller label below the main label. |
 | `--habitat-height INCHES` | `0.20` | Height of the separate habitat label. |
 | `--habitat-width INCHES` | `0.62` | Width of the smaller habitat label; must be less than the main width. |

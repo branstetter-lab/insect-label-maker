@@ -440,11 +440,20 @@ def separate_habitat_templates(templates):
     return result
 
 
-def habitat_label_plan(row, label_width, height, max_lines=3):
+def habitat_label_plan(row, label_width, height, max_lines=3, include_method=False):
     fields = [' '.join(row[key].split()) for key in ('MacroHabitat_Label', 'Microhabitat_Label')]
+    field_sources = ['macrohabitat', 'microhabitat']
+    if include_method:
+        keys = ('Sampling_Protocol_Label', 'Sampling_Protocol', 'Method')
+        if not any(key in row for key in keys):
+            raise ValueError('Including method requires Sampling_Protocol_Label, Sampling_Protocol, or Method.')
+        method = next((row[key] for key in keys if row.get(key)), '')
+        if method:
+            fields.append(' '.join(method.split()))
+            field_sources.append('method')
     texts, sources = [], []
     available = label_width - 2 * PAD - .3
-    for field, source in zip(fields, ['macrohabitat', 'microhabitat']):
+    for field, source in zip(fields, field_sources):
         current = ''
         for word in field.split():
             candidate = (current + ' ' + word).strip()
@@ -461,7 +470,9 @@ def habitat_label_plan(row, label_width, height, max_lines=3):
         sources.append(source)
     if len(texts) > max_lines:
         raise ValueError(f"Excel row {row['_excel_row']} ({row['Catalog_Number']}): habitat needs {len(texts)} lines; maximum is {max_lines}. Shorten its label fields.")
-    emphasis = label_italic_ranges(texts, fields[1])
+    micro_lines = [text for text, source in zip(texts, sources) if source == 'microhabitat']
+    micro_emphasis = iter(label_italic_ranges(micro_lines, fields[1]))
+    emphasis = [next(micro_emphasis) if source == 'microhabitat' else [] for source in sources]
     bounds = []
     italic = ImageFont.truetype(ITALIC_FONT_PATH, 4000)
     for text, spans in zip(texts, emphasis):
@@ -591,6 +602,11 @@ def special_label_plan(row, mode, label_width, show_catalog=True):
     if show_catalog and pdfmetrics.stringWidth(row['Catalog_Number'], 'LabelRegular', 4) * catalog_scale > HEIGHT - 2 * CATALOG_PAD:
         raise ValueError(f"Excel row {row['_excel_row']}: catalog number is too long for a 4-point vertical code; increase --height.")
     available = label_width - 2 * PAD - SIDE - BAR - 1.7
+    if mode == 'pin-barcode':
+        blank_width = label_width - PAD - SIDE - BAR
+        if blank_width - PAD < .08 * 72:
+            raise ValueError('Pin barcode label needs at least 0.08 inches of blank pin space left of the barcode margin; increase --width.')
+        return []
     if available <= 0:
         raise ValueError('Label width leaves no room beside the barcode.')
     if mode == 'barcode':
@@ -659,8 +675,8 @@ def draw_special_label(pdf, row, plan, x, y, label_width, guides, show_catalog):
 
 
 def generate_special(args, rows):
-    if args.separate_habitat or args.template:
-        raise ValueError('Barcode/determination modes do not use --template or --separate-habitat.')
+    if args.separate_habitat or args.template or args.include_method:
+        raise ValueError('Barcode/determination modes do not use --template, --separate-habitat, or --include-method.')
     show_catalog=not args.omit_catalog_text
     plans=[special_label_plan(r,args.mode,args.width*72,show_catalog) for r in rows]
     # Deliberately suppress Field_Number printing AND headings in these modes.
@@ -676,7 +692,7 @@ def generate_special(args, rows):
             draw_raster_label(pdf,lambda small:draw_special_label(small,row,plan,0,0,args.width*72,args.guides,show_catalog),x,y,args.width*72,HEIGHT)
         else:draw_special_label(pdf,row,plan,x,y,args.width*72,args.guides,show_catalog)
     pdf.save();temp.replace(output)
-    report=dict(mode=args.mode,labels=len(rows),width_inches=args.width,height_inches=args.height,
+    report=dict(pin_blank_width_inches=(args.width*72-PAD-SIDE-BAR)/72 if args.mode == 'pin-barcode' else None, mode=args.mode,labels=len(rows),width_inches=args.width,height_inches=args.height,
                 barcode_scale=args.barcode_scale,barcode_rendering=BARCODE_RENDERING,
                 label_rendering=args.label_rendering,barcode_raster_dpi=1200 if BARCODE_RENDERING=='raster' else None,
                 catalog_font_points=4,catalog_horizontal_scale=.65,catalog_text=show_catalog,
@@ -689,9 +705,9 @@ def generate_special(args, rows):
 def generate(args):
     global BARCODE_RENDERING, BAR
     mode = getattr(args, 'mode', 'locality')
-    if args.width is None: args.width = .55 if mode == 'barcode' else .68
-    if args.height is None: args.height = .30 if mode == 'barcode' else .33
-    if args.barcode_scale is None: args.barcode_scale = 1.05 if mode != 'locality' else 1.02
+    if args.width is None: args.width = .32 if mode == 'pin-barcode' else .55 if mode == 'barcode' else .68
+    if args.height is None: args.height = .30 if mode in {'barcode','pin-barcode'} else .33
+    if args.barcode_scale is None: args.barcode_scale = 1.05 if mode in {'barcode','determination'} else 1.02
     barcode_scale = args.barcode_scale
     if not math.isfinite(barcode_scale) or not 1 <= barcode_scale <= 1.1:
         raise ValueError('--barcode-scale must be between 1.0 and 1.1.')
@@ -740,6 +756,8 @@ def generate(args):
         pdfmetrics.registerFont(TTFont('FieldHeading', str(heading_path)))
     if mode == 'locality' and getattr(args, 'omit_catalog_text', False):
         raise ValueError('--omit-catalog-text is only available for barcode/determination labels.')
+    if args.include_method and not args.separate_habitat:
+        raise ValueError('--include-method requires --separate-habitat.')
     rows = read_rows(args.excel, args.sheet)
     if mode != 'locality':
         generate_special(args, rows)
@@ -761,7 +779,7 @@ def generate(args):
     common_width = args.width * 72
     habitat_height = args.habitat_height * 72
     habitat_gap = args.habitat_gap * 72
-    habitat_plans = [habitat_label_plan(row, args.habitat_width * 72, habitat_height, args.habitat_max_lines) for row in rows] if args.separate_habitat else []
+    habitat_plans = [habitat_label_plan(row, args.habitat_width * 72, habitat_height, args.habitat_max_lines, include_method=args.include_method) for row in rows] if args.separate_habitat else []
     for row in rows:
         if not any(layout(row, templates, common_width, uncertainty) is not None for uncertainty in (True, False)):
             raise ValueError(f"Excel row {row['_excel_row']} ({row['Catalog_Number']}) cannot fit at {MAIN_SIZE:g} pt main / 3.5 pt habitat within {args.width:g} × {args.height:g} inches. Shorten label fields, try --layout flow, or increase --height. Width cannot exceed 0.68 inches.")
@@ -813,7 +831,7 @@ def generate(args):
                        'habitat_label': habitat_report, 'placement': placement})
     pdf.save()
     temp.replace(output)
-    summary = {'label_rendering': label_rendering, 'label_raster_dpi': 1200 if label_rendering == 'raster' else None, 'barcode_rendering': BARCODE_RENDERING, 'barcode_raster_dpi': 1200 if BARCODE_RENDERING == 'raster' else None, 'labels': len(rows), 'separate_habitat': args.separate_habitat,
+    summary = {'include_method': args.include_method, 'label_rendering': label_rendering, 'label_raster_dpi': 1200 if label_rendering == 'raster' else None, 'barcode_rendering': BARCODE_RENDERING, 'barcode_raster_dpi': 1200 if BARCODE_RENDERING == 'raster' else None, 'labels': len(rows), 'separate_habitat': args.separate_habitat,
                'physical_labels': len(rows) * (2 if args.separate_habitat else 1),
                'habitat_label_width_inches': args.habitat_width if args.separate_habitat else None,
                'habitat_max_lines': args.habitat_max_lines if args.separate_habitat else None,
@@ -838,7 +856,8 @@ def generate(args):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('excel')
-    p.add_argument('--mode', choices=['locality','barcode','determination'], default='locality', help='Locality labels, compact generic barcode labels, or taxon/determiner labels')
+    p.add_argument('--mode', choices=['locality','barcode','determination','pin-barcode'], default='locality', help='Locality labels, compact generic barcode labels, or taxon/determiner labels')
+    p.add_argument('--include-method', action='store_true', help='Add sampling protocol after microhabitat on separate habitat labels; three lines total')
     p.add_argument('--omit-catalog-text', action='store_true', help='Barcode/determination modes: encode the catalog number without printing it as text')
     p.add_argument('--coordinate-scale', type=float, help='Override coordinate horizontal scale (0–1); font height is unchanged')
     p.add_argument('--barcode-scale', type=float, default=None, help='Scale barcode and quiet margin together (1.0–1.1); text clearance adapts')

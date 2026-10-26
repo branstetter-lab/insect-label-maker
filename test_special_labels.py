@@ -54,4 +54,29 @@ class SpecialLabels(unittest.TestCase):
             self.assertEqual(json.loads(out.with_suffix('.json').read_text())['records'][0]['lines'][0]['italic_end'],7)
             result,out=self.run_mode(root,['Catalog_Number'],[['THIS-CODE-IS-TOO-LONG-TO-PRINT']],'barcode')
             self.assertNotEqual(result.returncode,0);self.assertIn('increase --height',result.stderr)
+    def test_pin_barcode_has_no_caption_and_preserves_main_matrix_size(self):
+        with tempfile.TemporaryDirectory() as root:
+            result,out=self.run_mode(root,['Catalog_Number'],[['CASENT1234567']],'pin-barcode')
+            self.assertEqual(result.returncode,0,result.stderr)
+            d=json.loads(out.with_suffix('.json').read_text())
+            self.assertEqual(d['barcode_scale'],1.02)
+            self.assertEqual(d['records'][0]['lines'],[])
+            self.assertGreaterEqual(d['pin_blank_width_inches'],.08)
+            self.assertEqual(PdfReader(out).pages[0].extract_text().strip(),'CASENT1234567')
+            result,out=self.run_mode(root,['Catalog_Number'],[['CASENT1234567']],'pin-barcode','--width','.25')
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('pin space',result.stderr)
+    def test_optional_method_and_three_line_limit(self):
+        import label_maker as l
+        l.pdfmetrics.registerFont(l.TTFont('LabelRegular', l.FONT_PATH))
+        l.pdfmetrics.registerFont(l.TTFont('LabelItalic', l.ITALIC_FONT_PATH))
+        row={'Catalog_Number':'DEMO000001','_excel_row':2,'MacroHabitat_Label':'meadow','Microhabitat_Label':'Phacelia sp.','Sampling_Protocol':'net'}
+        p=l.habitat_label_plan(row,.62*72,.20*72,include_method=True)
+        self.assertEqual(p['lines'],['meadow','Phacelia sp.','net'])
+        self.assertEqual(p['line_sources'],['macrohabitat','microhabitat','method'])
+        self.assertEqual(p['italic_ranges'][-1],[])
+        self.assertEqual(len(l.habitat_label_plan(row,.62*72,.20*72)['lines']),2)
+        row['Sampling_Protocol']='net sweep repeated over a very long meadow path'
+        with self.assertRaisesRegex(ValueError,'maximum is 3'):
+            l.habitat_label_plan(row,.62*72,.20*72,include_method=True)
 if __name__=='__main__':unittest.main()
