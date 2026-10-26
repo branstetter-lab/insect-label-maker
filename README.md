@@ -84,7 +84,7 @@ Typical Windows paths are `C:\Windows\Fonts\arial.ttf` and `C:\Windows\Fonts\ari
 
 ## Prepare the Excel file
 
-Start with [the blank Excel template](templates/label_input_template.xlsx), or copy [the six fictional example specimens](examples/example_specimens.xlsx). The blank template contains no real specimen data and needs no Symbiota-only columns, specimen counts, or processing-status fields. Enter one row per specimen, repeating event information as needed. Header comments provide examples.
+Start with [the blank Excel template](templates/label_input_template.xlsx), or copy [the six fictional example specimens](examples/example_specimens.xlsx). The template columns are based on Symbiota field names, and the layout follows common insect collection-label conventions. Enter one row per label, repeating collection-event information as needed. Each row represents a uniquely identified cataloged unit, such as a pin or vial. Header comments provide examples.
 
 Use an `.xlsx` workbook with column headers in the first row and one specimen per subsequent row. Column order does not matter; header spelling and capitalization do. Extra columns are ignored unless referenced in the template. The active worksheet is used unless `--sheet` selects another.
 
