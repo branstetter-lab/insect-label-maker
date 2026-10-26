@@ -491,14 +491,14 @@ def draw_habitat_label(pdf, plan, x, y, label_width, guides):
         draw_text(pdf, x + PAD, y + plan['baselines'][i], text, size=4, italic_ranges=emphasis)
 
 
-def configure_dimensions(width_inches, height_inches, max_width=None):
+def configure_dimensions(width_inches, height_inches, max_width=None, min_height=.33):
     global HEIGHT, BAR_Y
     if not math.isfinite(width_inches) or not 0 < width_inches <= MAX_WIDTH_INCHES:
         raise ValueError('Label width must be greater than 0 and never exceed 0.68 inches (four-row unit-tray limit).')
     if max_width is not None and (not math.isfinite(max_width) or max_width != width_inches):
         raise ValueError('--max-width no longer allows widening; omit it or set it equal to --width (at most 0.68 inches).')
-    if not math.isfinite(height_inches) or not .33 <= height_inches <= 10.5:
-        raise ValueError('Label height must be between 0.33 and 10.5 inches, within a Letter page.')
+    if not math.isfinite(height_inches) or not min_height <= height_inches <= 10.5:
+        raise ValueError(f'Label height must be between {min_height:g} and 10.5 inches, within a Letter page.')
     HEIGHT = height_inches * 72
     BAR_Y = (HEIGHT - BAR) / 2
 
@@ -585,9 +585,105 @@ def draw_raster_label(pdf, draw, x, y, label_width, label_height):
         pdf.drawImage(ImageReader(img), x, y, width=label_width, height=label_height)
 
 
+def special_label_plan(row, mode, label_width, show_catalog=True):
+    """Plan barcode/identification labels without locality fields or event codes."""
+    catalog_scale = .65
+    if show_catalog and pdfmetrics.stringWidth(row['Catalog_Number'], 'LabelRegular', 4) * catalog_scale > HEIGHT - 2 * CATALOG_PAD:
+        raise ValueError(f"Excel row {row['_excel_row']}: catalog number is too long for a 4-point vertical code; increase --height.")
+    available = label_width - 2 * PAD - SIDE - BAR - 1.7
+    if available <= 0:
+        raise ValueError('Label width leaves no room beside the barcode.')
+    if mode == 'barcode':
+        blocks = [('Unique Specimen Identifier', False)]
+    else:
+        for key in ('Genus', 'Species', 'Determiner_Label'):
+            if not row.get(key):
+                raise ValueError(f"Excel row {row['_excel_row']}: {key} is required for determination labels.")
+        name = row['Genus'] + ' ' + row['Species']
+        blocks = [(name + (' ' + row['Author'] if row.get('Author') else ''), True), (row['Determiner_Label'], False)]
+    lines = []
+    for text, scientific in blocks:
+        offset = 0
+        current = ''
+        line_start = 0
+        italic_end = (len(row['Genus']) if row['Species'] in {'sp.', 'spp.', 'indet'} else len(row['Genus'] + ' ' + row['Species'])) if scientific else 0
+        for word in text.split():
+            candidate = (current + ' ' + word).strip()
+            if fit_width(candidate, 4) > available:
+                if not current:
+                    raise ValueError(f"Excel row {row['_excel_row']}: word {word!r} cannot fit; increase --width or shorten label text.")
+                lines.append((current, max(0, min(len(current), italic_end-line_start))))
+                offset += len(current) + 1
+                line_start = offset
+                current = word
+                if fit_width(word, 4) > available:
+                    raise ValueError(f"Excel row {row['_excel_row']}: word {word!r} cannot fit.")
+            else:
+                current = candidate
+        if current:
+            lines.append((current, max(0, min(len(current), italic_end-line_start))))
+    leading = 4.5
+    block_height = (len(lines)-1)*leading + 4
+    if block_height > HEIGHT-2*PAD:
+        raise ValueError(f"Excel row {row['_excel_row']}: text needs more height; shorten it or increase --height.")
+    top_baseline = (HEIGHT+block_height)/2-3.3
+    return [dict(text=t, italic_end=end, baseline=top_baseline-i*leading) for i,(t,end) in enumerate(lines)]
+
+
+def draw_special_label(pdf, row, plan, x, y, label_width, guides, show_catalog):
+    if guides:
+        pdf.setStrokeColorRGB(.8,.8,.8); pdf.setLineWidth(.15)
+        pdf.rect(x,y,label_width,HEIGHT); pdf.setStrokeColorRGB(0,0,0)
+    for line in plan:
+        end = line['italic_end']
+        draw_text(pdf,x+PAD,y+line['baseline'],line['text'],size=4,italic_ranges=[(0,end)] if end else ())
+    bx=x+label_width-PAD-SIDE-BAR
+    if BARCODE_RENDERING == 'raster':
+        image=matrix(row['Catalog_Number']).resize((round(BAR/72*1200),)*2,Image.Resampling.NEAREST)
+        pdf.drawImage(ImageReader(image),bx,y+BAR_Y,width=BAR,height=BAR)
+    else:
+        draw_vector_matrix(pdf,matrix(row['Catalog_Number']),bx,y+BAR_Y)
+    if show_catalog:
+        length=pdfmetrics.stringWidth(row['Catalog_Number'],'LabelRegular',4)*.65
+        pdf.saveState();pdf.translate(x+label_width-PAD-.75,y+(HEIGHT-length)/2);pdf.rotate(90)
+        draw_text(pdf,0,0,row['Catalog_Number'],size=4,horizontal_scale=.65);pdf.restoreState()
+
+
+def generate_special(args, rows):
+    if args.separate_habitat or args.template:
+        raise ValueError('Barcode/determination modes do not use --template or --separate-habitat.')
+    show_catalog=not args.omit_catalog_text
+    plans=[special_label_plan(r,args.mode,args.width*72,show_catalog) for r in rows]
+    # Deliberately suppress Field_Number printing AND headings in these modes.
+    positions=sheet_positions(rows,args.width*72,HEIGHT,False)
+    output=Path(args.output);output.parent.mkdir(parents=True,exist_ok=True)
+    temp=output.with_suffix('.tmp.pdf');pdf=canvas.Canvas(str(temp),pagesize=(612,792))
+    pdf.setTitle('Pittacia Insectorum — '+args.mode+' labels')
+    page=1
+    for row,plan,pos in zip(rows,plans,positions):
+        if pos['page']!=page:pdf.showPage();page=pos['page']
+        x,y=pos['x_points'],pos['y_points']
+        if args.label_rendering=='raster':
+            draw_raster_label(pdf,lambda small:draw_special_label(small,row,plan,0,0,args.width*72,args.guides,show_catalog),x,y,args.width*72,HEIGHT)
+        else:draw_special_label(pdf,row,plan,x,y,args.width*72,args.guides,show_catalog)
+    pdf.save();temp.replace(output)
+    report=dict(mode=args.mode,labels=len(rows),width_inches=args.width,height_inches=args.height,
+                barcode_scale=args.barcode_scale,barcode_rendering=BARCODE_RENDERING,
+                label_rendering=args.label_rendering,barcode_raster_dpi=1200 if BARCODE_RENDERING=='raster' else None,
+                catalog_font_points=4,catalog_horizontal_scale=.65,catalog_text=show_catalog,
+                field_headings=False,barcode_center_y_inches=HEIGHT/144,
+                records=[dict(catalog_number=r['Catalog_Number'],excel_row=r['_excel_row'],lines=plan,placement=pos) for r,plan,pos in zip(rows,plans,positions)])
+    output.with_suffix('.json').write_text(json.dumps(report,indent=2))
+    print(f'Created {output}: {len(rows)} {args.mode} labels, {args.width:g} × {args.height:g} in; 4-point text; no collection-event codes.')
+
+
 def generate(args):
     global BARCODE_RENDERING, BAR
-    barcode_scale = getattr(args, 'barcode_scale', 1.02)
+    mode = getattr(args, 'mode', 'locality')
+    if args.width is None: args.width = .55 if mode == 'barcode' else .68
+    if args.height is None: args.height = .30 if mode == 'barcode' else .33
+    if args.barcode_scale is None: args.barcode_scale = 1.05 if mode != 'locality' else 1.02
+    barcode_scale = args.barcode_scale
     if not math.isfinite(barcode_scale) or not 1 <= barcode_scale <= 1.1:
         raise ValueError('--barcode-scale must be between 1.0 and 1.1.')
     BAR = 7.92 * 18 / 14 * barcode_scale
@@ -596,7 +692,7 @@ def generate(args):
     if label_rendering == 'raster' and not shutil.which('pdftoppm'):
         raise ValueError('Whole-label raster rendering requires pdftoppm (Poppler). On macOS: brew install poppler.')
     global MAIN_SIZE, FONT_PATH, LAYOUT_MODE, ITALIC_FONT_PATH, FIELD_SIZE, FIELD_FONT, TEXT_SCALE, COORDINATE_SCALE
-    configure_dimensions(args.width, args.height, args.max_width)
+    configure_dimensions(args.width, args.height, args.max_width, min_height=.20 if mode != 'locality' else .33)
     FIELD_SIZE = args.field_size
     MAIN_SIZE = args.main_size
     LAYOUT_MODE = args.layout
@@ -629,11 +725,16 @@ def generate(args):
     heading_path = Path(args.heading_font) if args.heading_font else font.with_name(family + ' Bold.ttf')
     if not heading_path.is_file():
         heading_path = font.with_name('verdanab.ttf' if family == 'Verdana' else 'arialbd.ttf')
-    if not heading_path.is_file() and not args.no_field_headings:
+    if not heading_path.is_file() and not args.no_field_headings and mode == 'locality':
         raise ValueError('Bold heading font not found. Supply --heading-font with a matching bold .ttf path.')
     if heading_path.is_file():
         pdfmetrics.registerFont(TTFont('FieldHeading', str(heading_path)))
+    if mode == 'locality' and getattr(args, 'omit_catalog_text', False):
+        raise ValueError('--omit-catalog-text is only available for barcode/determination labels.')
     rows = read_rows(args.excel, args.sheet)
+    if mode != 'locality':
+        generate_special(args, rows)
+        return
     templates = json.loads(Path(args.template).read_text()) if args.template else DEFAULT_LINES
     if not isinstance(templates, list) or not templates or not all(isinstance(t, str) for t in templates):
         raise ValueError('Template must be a JSON list of line strings.')
@@ -728,8 +829,10 @@ def generate(args):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('excel')
+    p.add_argument('--mode', choices=['locality','barcode','determination'], default='locality', help='Locality labels, compact generic barcode labels, or taxon/determiner labels')
+    p.add_argument('--omit-catalog-text', action='store_true', help='Barcode/determination modes: encode the catalog number without printing it as text')
     p.add_argument('--coordinate-scale', type=float, help='Override coordinate horizontal scale (0–1); font height is unchanged')
-    p.add_argument('--barcode-scale', type=float, default=1.02, help='Scale barcode and quiet margin together (1.0–1.1); text clearance adapts')
+    p.add_argument('--barcode-scale', type=float, default=None, help='Scale barcode and quiet margin together (1.0–1.1); text clearance adapts')
     p.add_argument('--label-rendering', choices=['vector', 'raster'], default='vector', help='Render each complete label as a 1200-dpi image (requires Poppler); headings stay vector')
     p.add_argument('--barcode-rendering', choices=['vector', 'raster'], default='raster', help='Barcode rendering; raster embeds a 1200-dpi image with unchanged size and quiet margin')
     p.add_argument('-o', '--output', default='output/labels.pdf')
@@ -740,9 +843,9 @@ def main():
     p.add_argument('--main-size', type=float, choices=[3.5, 4.0], default=4.0, help='Font size for the first five physical text lines')
     p.add_argument('--template', help='JSON list of lines with [Excel_Column] placeholders')
     p.add_argument('--font', help='Regular .ttf path; defaults to the selected family')
-    p.add_argument('--width', type=float, default=.68, help='Label width in inches; must never exceed 0.68')
+    p.add_argument('--width', type=float, default=None, help='Label width in inches; must never exceed 0.68')
     p.add_argument('--max-width', type=float, default=None, help='Deprecated: must equal --width; automatic widening is disabled')
-    p.add_argument('--height', type=float, default=.33, help='Label height in inches (0.33–10.5); barcode stays vertically centered')
+    p.add_argument('--height', type=float, default=None, help='Label height in inches (0.33–10.5); barcode stays vertically centered')
     p.add_argument('--separate-habitat', action='store_true', help='Place a smaller 4-point habitat label (up to three lines) directly below each main label')
     p.add_argument('--habitat-height', type=float, default=.20, help='Separate habitat label height in inches (default 0.20)')
     p.add_argument('--habitat-width', type=float, default=.62, help='Separate habitat label width in inches (default 0.62; must be less than main width)')

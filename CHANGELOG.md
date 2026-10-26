@@ -1,5 +1,11 @@
 # Version history
 
+## Unreleased
+
+- Adopted the display name Pittacia Insectorum; existing script and repository paths are unchanged.
+- Added compact generic barcode labels and determination labels with Data Matrix and 4-point catalog numbers, with input templates and fictional examples.
+- New modes omit collection-event codes and use a 1.05 barcode scale; locality-mode defaults are unchanged.
+
 ## 2026-10-26
 
 - Added a minimal Excel input template, README label previews, and documentation of the lab printer and paper setup.

@@ -1,4 +1,6 @@
-# Insect label maker
+# Pittacia Insectorum
+
+*Insect specimen labels from spreadsheets.*
 
 Generate print-ready insect specimen labels from an Excel workbook. The program creates one label per specimen row, with locality and collection information, a vertically oriented catalog number, a Data Matrix barcode encoding that catalog number, and a collection-event code.
 
@@ -84,6 +86,46 @@ All template-referenced headers must exist, even when their cells are blank. `Ca
 
 Keep the full scientific data in other columns and use the label-specific fields for concise wording. Text is not silently truncated. Formulas use their last saved calculated values: recalculate and save in Excel before importing. Text dates are preserved; actual Excel dates are formatted as `12/Jul/2026`. Coordinates retain up to 12 significant digits.
 
+## Barcode-only and determination labels
+
+| Generic barcode | Determination with barcode |
+| --- | --- |
+| <img src="docs/images/labels_barcodes.png" width="200" alt="Three generic barcode labels"> | <img src="docs/images/labels_determinations.png" width="250" alt="Three determination labels with barcodes"> |
+
+These modes need no collection/locality data. Each row still needs its own unique, preassigned `Catalog_Number`; the tool does not reserve numbers or assign the same barcode to multiple cataloged units. A cataloged unit may be a pin or vial rather than an individual insect.
+
+### Generic barcode labels
+
+Use [the barcode input template](templates/barcodes_input_template.xlsx), containing only `Catalog_Number`, or try [the fictional example](examples/example_barcodes.xlsx):
+
+```sh
+python label_maker.py examples/example_barcodes.xlsx --mode barcode --output output/barcodes.pdf
+```
+
+The default compact label is **0.55 × 0.30 inches**. It prints “Unique Specimen Identifier”, a centered Data Matrix barcode, and a vertical **4-point Catalog Number**. Field Numbers and event block headings are omitted even if those columns occur in the input. [Printable example](examples/example_labels_barcodes.pdf).
+
+### Determination labels with barcodes
+
+Use [the determination input template](templates/determinations_input_template.xlsx) with these columns:
+
+| Column | Meaning |
+| --- | --- |
+| `Catalog_Number` | Required unique barcode payload and printed code. Reuse an existing code for an existing cataloged unit. |
+| `Genus` | Required taxon genus. |
+| `Species` | Required epithet or designation such as `sp.`. |
+| `Author` | Optional taxon authority, e.g. `(Linnaeus, 1758)`. |
+| `Determiner_Label` | Required display text, e.g. `A. Smith 2026`. |
+
+```sh
+python label_maker.py examples/example_determinations.xlsx --mode determination --output output/determinations.pdf
+```
+
+The default is **0.68 × 0.33 inches**, with the taxon and authority followed by the determiner. Genus/species are italic; `sp.`, `spp.`, `indet`, authorities, and determiner text remain upright. Text wraps beside the barcode and is vertically centered. All text is 4 points; these modes stop with a fit error rather than shrink or omit determination information. [Printable example](examples/example_labels_determinations.pdf).
+
+Both modes default to **1.05 barcode scale** relative to the original 0.11-inch dark symbol, with quiet margins enlarged together, raster barcodes and vector text. The Catalog Number uses 65% horizontal scale at 4 points to fit compact labels. Use `--width`, `--height`, or `--barcode-scale` to override dimensions; width never exceeds 0.68 inch. Longer IDs or taxon names may need greater height or shorter display wording. `--guides` adds light cutting rectangles. `--omit-catalog-text` is an optional special-mode switch to hide the human-readable code only; the unique value is still required and encoded. These modes do not accept `--template` or `--separate-habitat`.
+
+For existing collection labels and retroactive data entry, verify that the determination barcode matches the code already assigned to the pin/vial before printing.
+
 ## Generate labels
 
 After filling and saving a copy of the blank template:
@@ -130,7 +172,9 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `excel` | Required | Input `.xlsx` path (positional argument). |
 | `-o`, `--output` | `output/labels.pdf` | PDF path; JSON report uses the same basename. |
 | `--barcode-rendering raster\|vector` | `raster` | 1200-dpi barcode images or vector squares. |
-| `--barcode-scale FACTOR` | `1.02` | Enlarge barcode and quiet margin together; range 1.0–1.1. |
+| `--mode locality\|barcode\|determination` | `locality` | Choose collection, generic identifier, or determination labels. |
+| `--omit-catalog-text` | Off | Hide printed catalog text in barcode/determination modes only. |
+| `--barcode-scale FACTOR` | `1.02` locality; `1.05` special modes | Enlarge barcode and quiet margin together; range 1.0–1.1. |
 | `--coordinate-scale FACTOR` | `.61` Arial / `.49` Verdana | Horizontal coordinate scale; font height unchanged. |
 | `--label-rendering vector\|raster` | `vector` | Keep text vector-based, or rasterize entire labels with Poppler. |
 | `--layout lines\|flow` | `lines` | Separate-line or comma-separated wrapped layout. |
@@ -150,8 +194,8 @@ Within `Microhabitat_Label`, recognizable genus/species combinations are italici
 | `--habitat-width INCHES` | `0.62` | Width of the smaller habitat label; must be less than the main width. |
 | `--habitat-max-lines 2\|3` | `3` | Maximum physical lines on the habitat label. |
 | `--habitat-gap INCHES` | `0.02` | Gap between the main and separate habitat labels. |
-| `--width INCHES` | `0.68` | Label width; must be positive and never exceed 0.68 inch. |
-| `--height INCHES` | `0.33` | Label height; may be increased up to 10.5 inches within the printable page. |
+| `--width INCHES` | `0.68`; barcode mode `0.55` | Label width; must be positive and never exceed 0.68 inch. |
+| `--height INCHES` | `0.33`; barcode mode `0.30` | Label height; may be increased up to 10.5 inches within the printable page. |
 | `--max-width INCHES` | Not set | Deprecated compatibility option; must equal `--width`. It cannot permit widening. |
 | `-h`, `--help` | — | Show usage. |
 

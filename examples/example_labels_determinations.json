@@ -1,0 +1,93 @@
+{
+  "mode": "determination",
+  "labels": 3,
+  "width_inches": 0.68,
+  "height_inches": 0.33,
+  "barcode_scale": 1.05,
+  "barcode_rendering": "raster",
+  "label_rendering": "vector",
+  "barcode_raster_dpi": 1200,
+  "catalog_font_points": 4,
+  "catalog_horizontal_scale": 0.65,
+  "catalog_text": true,
+  "field_headings": false,
+  "barcode_center_y_inches": 0.165,
+  "records": [
+    {
+      "catalog_number": "DEMO000001",
+      "excel_row": 2,
+      "lines": [
+        {
+          "text": "Lasius niger (Linnaeus,",
+          "italic_end": 12,
+          "baseline": 15.080000000000002
+        },
+        {
+          "text": "1758)",
+          "italic_end": 0,
+          "baseline": 10.580000000000002
+        },
+        {
+          "text": "A. Smith 2026",
+          "italic_end": 0,
+          "baseline": 6.080000000000002
+        }
+      ],
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 750.24,
+        "heading": null
+      }
+    },
+    {
+      "catalog_number": "DEMO000002",
+      "excel_row": 3,
+      "lines": [
+        {
+          "text": "Bombus bifarius",
+          "italic_end": 15,
+          "baseline": 15.080000000000002
+        },
+        {
+          "text": "Cresson, 1878",
+          "italic_end": 0,
+          "baseline": 10.580000000000002
+        },
+        {
+          "text": "B. Jones 2026",
+          "italic_end": 0,
+          "baseline": 6.080000000000002
+        }
+      ],
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 725.04,
+        "heading": null
+      }
+    },
+    {
+      "catalog_number": "DEMO000003",
+      "excel_row": 4,
+      "lines": [
+        {
+          "text": "Formica sp.",
+          "italic_end": 7,
+          "baseline": 12.830000000000002
+        },
+        {
+          "text": "A. Smith 2026",
+          "italic_end": 0,
+          "baseline": 8.330000000000002
+        }
+      ],
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 699.8399999999999,
+        "heading": null
+      }
+    }
+  ]
+}
