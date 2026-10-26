@@ -206,6 +206,19 @@ The program first tries to retain all information, then may omit coordinate unce
 
 Within `Microhabitat_Label`, recognizable genus/species combinations are italicized: *Phacelia* sp. or *Phacelia tanacetifolia*. `sp.`, `spp.`, family names such as Asteraceae, and descriptive text remain upright. Recognition uses name structure, not a taxonomic database; review unusual or abbreviated names.
 
+### Text length while entering data
+
+For the normal six-line layout, use these **approximate editing targets per complete ordinary text line**, including spaces and separators:
+
+| Font | 4 pt | 3.5 pt |
+| --- | --- | --- |
+| Arial | About 20–23 characters | About 23–25 characters |
+| Verdana | About 22–24 characters | About 24–27 characters |
+
+These measured examples are **guidance, not hard limits**: wide letters can fit far fewer characters than narrow letters. Several fields may share one line. Coordinates use a separate compression setting; habitat is always 3.5 pt and may have a smaller text area. The tool measures actual rendered width and may reduce a line to 3.5 pt or apply its documented omission rules. Check the PDF and JSON report.
+
+The blank Excel templates provide advisory header comments rather than character-count restrictions. See [text-length guidance](docs/text_length_guidance.md) for the assumptions, shared-line budgets, and examples.
+
 ### Command-line options
 
 | Option | Default | Effect |
