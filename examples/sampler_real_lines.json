@@ -1,0 +1,132 @@
+{
+  "include_method": false,
+  "label_rendering": "vector",
+  "label_raster_dpi": null,
+  "barcode_rendering": "raster",
+  "barcode_raster_dpi": 1200,
+  "labels": 1,
+  "separate_habitat": false,
+  "physical_labels": 1,
+  "habitat_label_width_inches": null,
+  "habitat_max_lines": null,
+  "habitat_label_height_inches": null,
+  "habitat_label_gap_inches": null,
+  "width_inches": 0.68,
+  "height_inches": 0.33,
+  "field_headings": true,
+  "field_font_path": "/System/Library/Fonts/Supplemental/Verdana.ttf",
+  "field_font_horizontal_scale": 0.6,
+  "field_left_shift_points": 0.0,
+  "habitat_field_gap_points": 1.5,
+  "layout": "lines",
+  "font": "Arial",
+  "font_points": 4.0,
+  "habitat_font_points": 3.5,
+  "catalog_font_points": 3.75,
+  "field_font_points": 4.0,
+  "barcode_scale": 1.02,
+  "barcode_dark_symbol_inches": 0.11220000000000001,
+  "barcode_center_y_inches": 0.165,
+  "horizontal_gap_inches": 0.02,
+  "vertical_gap_inches": 0.02,
+  "text_horizontal_scale": 0.75,
+  "coordinate_horizontal_scale": 0.61,
+  "barcode": "Data Matrix",
+  "macrohabitat_omitted_count": 1,
+  "uncertainty_omitted_count": 0,
+  "records": [
+    {
+      "excel_row": 2,
+      "catalog_number": "BBSL1207977",
+      "field_number": "MGB4209",
+      "uncertainty_omitted": false,
+      "macrohabitat_omitted": true,
+      "line_text_runs": [
+        [
+          [
+            "USA: UT, Cache Co.",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Tony Grove, 0.5km NNE",
+            3.5,
+            0.75
+          ]
+        ],
+        [
+          [
+            "41.89971 -111.64205",
+            4,
+            0.61
+          ],
+          [
+            "\u00b1200m",
+            3.5,
+            0.75
+          ]
+        ],
+        [
+          [
+            "2500m, 24Jun2022",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "M.Branstetter, C.Meidt",
+            4,
+            0.75
+          ]
+        ],
+        [
+          [
+            "Taraxacum officinale",
+            3.5,
+            0.75
+          ]
+        ]
+      ],
+      "line_font_points": [
+        4,
+        3.5,
+        4,
+        4,
+        4,
+        3.5
+      ],
+      "line_baselines": [
+        20.547890625,
+        16.747890625,
+        12.947890625000001,
+        9.147890625000002,
+        5.347890625000002,
+        1.5478906250000009
+      ],
+      "lines": [
+        "USA: UT, Cache Co.",
+        "Tony Grove, 0.5km NNE",
+        "41.89971 -111.64205\u00b1200m",
+        "2500m, 24Jun2022",
+        "M.Branstetter, C.Meidt",
+        "Taraxacum officinale"
+      ],
+      "habitat_label": null,
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 742.24,
+        "heading": {
+          "text": "--------- MGB4209 ---------",
+          "field_number": "MGB4209",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 769
+        }
+      }
+    }
+  ]
+}

@@ -1,21 +1,22 @@
-"""Compose existing fictional example PDFs at actual size onto one comparison sheet."""
+"""Compose real collection and fictional determination example PDFs at actual size onto one comparison sheet."""
 from pathlib import Path
 import copy,io,json
 from reportlab.pdfgen import canvas
 from pypdf import PdfReader,PdfWriter,Transformation
 ROOT=Path(__file__).resolve().parents[1]
 OPTIONS=[
-('Locality: separate lines','example_labels_lines','--mode locality'),
-('Locality: wrapped text','example_labels_flow','--layout flow'),
-('Two labels: habitat','example_labels_separate_habitat','--separate-habitat'),
-('Two labels: habitat + method','example_labels_habitat_method','--separate-habitat --include-method'),
-('Generic barcode','example_labels_barcodes','--mode barcode'),
-('Determination + barcode','example_labels_determinations','--mode determination'),
-('Pin barcode: blank space at left','example_labels_pin_barcode','--mode pin-barcode')]
+('Locality: separate lines','sampler_real_lines','--mode locality'),
+('Locality: wrapped text','sampler_real_flow','--layout flow'),
+('Two labels: habitat','sampler_real_paired','--separate-habitat'),
+('Two labels: habitat + method','sampler_real_method','--separate-habitat --include-method'),
+('Generic barcode','sampler_real_barcode','--mode barcode'),
+('Determination + barcode (fictional)','example_labels_determinations','--mode determination'),
+('Pin barcode: blank space at left','sampler_real_pin','--mode pin-barcode')]
 def main():
  stream=io.BytesIO();c=canvas.Canvas(stream,pagesize=(612,792));c.setTitle('Pittacia Insectorum — label options')
  c.setFont('Helvetica-Bold',16);c.drawString(36,756,'Pittacia Insectorum — label options')
- c.setFont('Helvetica',9);c.drawString(36,738,'Fictional examples. Print at Actual Size / 100%; repeated IDs are intentional.')
+ c.setFont('Helvetica',9);c.drawString(36,738,'Real collection example: BBSL1207977 / MGB4209. Shared with permission.')
+ c.drawString(36,725,'Determination example is fictional. Repeated IDs are intentional. Print at Actual Size / 100%.')
  c.line(36,715,108,715);c.drawString(116,712,'1 inch / 25.4 mm calibration line')
  for i,(name,stem,command) in enumerate(OPTIONS):
   y=670-i*80
@@ -23,6 +24,10 @@ def main():
   c.setFont('Helvetica',8);c.drawString(36,y-15,command)
   d=json.loads((ROOT/'examples'/f'{stem}.json').read_text())
   c.drawString(36,y-28,f"Main: {d['width_inches']:g} × {d['height_inches']:g} in")
+  if d.get('macrohabitat_omitted_count'):
+   c.drawString(36,y-40,'Fit fallback: macrohabitat omitted.')
+  if d.get('uncertainty_omitted_count'):
+   c.drawString(36,y-40,'Fit fallback: coordinate uncertainty omitted.')
   top=680-i*80; w=d['width_inches']*72; h=d['height_inches']*72
   c.setStrokeColorRGB(.7,.7,.7); c.setLineWidth(.15);c.rect(420,top-h,w,h)
   if d.get('separate_habitat'):

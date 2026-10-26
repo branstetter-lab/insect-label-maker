@@ -8,13 +8,13 @@ The tool runs locally, reads the workbook without changing it, and exports a US 
 
 ## Try all label options
 
-Download the [printable seven-layout sampler](examples/label_options_sampler.pdf) and [filled example workbook](examples/label_options_examples.xlsx). Each layout has its own worksheet; the Instructions worksheet lists the corresponding command options. The sampler shows actual-size labels with light boundary guides, using fictional data and intentionally repeated catalog IDs. Print at 100%, not Fit to page.
+Download the [printable seven-layout sampler](examples/label_options_sampler.pdf) and [filled example workbook](examples/label_options_examples.xlsx). Each layout has its own worksheet; the Instructions worksheet lists the corresponding command options. The sampler shows actual-size labels with light boundary guides. Six layouts use the real collection record BBSL1207977 / MGB4209, shared with permission; the determination layout remains explicitly fictional because no specimen determination was supplied. Catalog IDs are intentionally repeated across alternative layouts. The sampler notes any automatic fit-related omissions. Print at 100%, not Fit to page.
 
 The [blank all-options workbook](templates/all_options_input_template.xlsx) contains matching empty worksheets. Select the worksheet with `--sheet`, and use the flags listed on its Instructions worksheet. These are alternative views of the same example records, not seven new specimen sets.
 
 ## Example labels
 
-These enlarged previews use fictional specimen data. Download the PDFs for printing; do not print the PNG previews as labels.
+The enlarged previews below use fictional specimen data; the linked seven-layout sampler additionally includes the real collection example described above. Download the PDFs for printing; do not print the PNG previews as labels.
 
 | Separate lines | Wrapped text | Separate habitat label |
 | --- | --- | --- |
