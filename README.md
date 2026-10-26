@@ -14,12 +14,31 @@ The [blank all-options workbook](templates/all_options_input_template.xlsx) cont
 
 ## Example labels
 
-The enlarged previews below use fictional specimen data; the linked seven-layout sampler additionally includes the real collection example described above. Download the PDFs for printing; do not print the PNG previews as labels.
+These enlarged previews use **BBSL1207977 / MGB4209**, a real Tony Grove collection record shared with permission. Download the PDFs for printing; do not print these enlarged PNG previews as labels.
 
-| Separate lines | Wrapped text | Separate habitat label |
+| Separate lines | Wrapped text | Separate habitat + method |
 | --- | --- | --- |
-| <img src="docs/images/labels_lines.png" width="160" alt="Six example specimen labels with separate field lines"> | <img src="docs/images/labels_flow.png" width="160" alt="Six example labels with wrapped text"> | <img src="docs/images/labels_separate_habitat.png" width="160" alt="Six main labels paired with smaller habitat labels"> |
-| [Print PDF](examples/example_labels_lines.pdf) | [Print PDF](examples/example_labels_flow.pdf) | [Print PDF](examples/example_labels_separate_habitat.pdf) |
+| <img src="docs/images/readme_real_lines.png" width="240" alt="Real Tony Grove label with separate data lines"> | <img src="docs/images/readme_real_flow.png" width="240" alt="Real Tony Grove label with wrapped text and intact coordinates"> | <img src="docs/images/readme_real_method.png" width="240" alt="Real Tony Grove collection label with a separate habitat and net sampling protocol label"> |
+| [Print PDF](examples/sampler_real_lines.pdf) | [Print PDF](examples/sampler_real_flow.pdf) | [Print PDF](examples/sampler_real_method.pdf) |
+
+The printed data include `USA: UT, Cache Co.`, `Tony Grove, 0.5km NNE`, coordinates `41.89971 -111.64205` with `±200m` uncertainty, `2500m, 24Jun2022`, and collectors `M. Branstetter, C. Meidt`. The separate habitat label shows `alpine meadow`, *Taraxacum officinale*, and optional method `net`. In the normal single-label example, macrohabitat is omitted by the documented fit fallback; the wrapped and paired examples retain it.
+
+### Where each field goes
+
+![Collection label with bracketed field names and optional separate habitat label](docs/images/label_field_map.svg)
+
+This diagram is deliberately enlarged and schematic. Bracketed names refer to Excel headers; they are replaced by cell values when generating labels. The default six-line layout is:
+
+```text
+[Country]: [StateProv], [County]
+[LocalityLabel]
+[Latitude] [Longitude]±[Uncertainty]m
+[Verbatim_Elevation], [Verbatim_Date]
+[Collector_Label]
+[MacroHabitat_Label]; [Microhabitat_Label]
+```
+
+`[Catalog_Number]` is printed vertically and encoded in the matrix; `[Field_Number]` is the collection-event code beside it. With separate habitat labels, habitat moves to the second label, and `--include-method` optionally adds the sampling protocol. `StateProvince` is accepted as an alias for `StateProv`.
 
 ## Files to share
 
@@ -27,7 +46,7 @@ The enlarged previews below use fictional specimen data; the linked seven-layout
 - `requirements.txt` — Python dependencies.
 - `templates/label_input_template.xlsx` — blank Excel input with only the 14 printed/encoded label fields; header comments explain each field.
 - `label_template.json` — editable field order and punctuation (not the Excel input template).
-- `examples/` — fictional example data, PDFs for both layouts and separate habitat labels, and their reports.
+- `examples/` — fictional practice data plus the authorized real-record sampler, PDFs for the available layouts, and their reports.
 - `README.md` — these instructions.
 
 Send these files together. Do not copy your `.venv` folder; each user creates their own environment. Arial font files are not included. A ready-to-share copy of these files is available in `dist/insect_label_maker.zip`.
