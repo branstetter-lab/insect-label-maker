@@ -4,7 +4,7 @@
 
 Generate print-ready insect specimen labels from an Excel workbook. The program creates one label per specimen row, with locality and collection information, a vertically oriented catalog number, a Data Matrix barcode encoding that catalog number, and a collection-event code.
 
-The tool runs locally, reads the workbook without changing it, and exports a US Letter PDF plus a JSON layout report. Text uses vector graphics with embedded fonts. All Data Matrix barcodes are embedded as 1200-dpi raster images in every label mode. Label text remains vector-based. Arial coordinates use 61% horizontal scale to preserve their preferred 4-point size where the data fit.
+The tool runs locally, reads the workbook without changing it, and exports a US Letter PDF plus a JSON layout report. Text uses vector graphics with embedded fonts. All Data Matrix barcodes are embedded as 1200-dpi raster images in every label mode. Label text remains vector-based. **Verdana is the default font for label text**, including coordinates, catalog numbers, and habitat labels. Arial remains available with `--font-family arial`.
 
 ## Try all label options
 
@@ -49,7 +49,7 @@ This diagram is deliberately enlarged and schematic. Bracketed names refer to Ex
 - `examples/` — fictional practice data plus the authorized real-record sampler, PDFs for the available layouts, and their reports.
 - `README.md` — these instructions.
 
-Send these files together. Do not copy your `.venv` folder; each user creates their own environment. Arial font files are not included. A ready-to-share copy of these files is available in `dist/insect_label_maker.zip`.
+Send these files together. Do not copy your `.venv` folder; each user creates their own environment. Font files are not included. A ready-to-share copy of these files is available in `dist/insect_label_maker.zip`.
 
 ## Installation
 
@@ -74,13 +74,13 @@ The commands below use `python`. On Windows, substitute `.venv\Scripts\python.ex
 
 ### Fonts
 
-The program requires matching **Arial Regular** and **Arial Italic** TrueType font files, plus **Arial Bold** for the default field-block headings. It looks in `/System/Library/Fonts/Supplemental/` by default on macOS. On other systems, or if fonts are elsewhere, supply both paths:
+The program requires matching **Verdana Regular** and **Verdana Italic** TrueType font files, plus **Verdana Bold** for the default field-block headings. It looks in `/System/Library/Fonts/Supplemental/` by default on macOS. On other systems, or if fonts are elsewhere, supply both paths:
 
 ```sh
-python label_maker.py examples/example_specimens.xlsx --font "/path/to/Arial.ttf" --italic-font "/path/to/Arial Italic.ttf" --output output/example.pdf
+python label_maker.py examples/example_specimens.xlsx --font "/path/to/Verdana.ttf" --italic-font "/path/to/Verdana Italic.ttf" --heading-font "/path/to/Verdana Bold.ttf" --output output/example.pdf
 ```
 
-Typical Windows paths are `C:\Windows\Fonts\arial.ttf` and `C:\Windows\Fonts\ariali.ttf`. Linux users must provide their own installed Arial files. Regular and italic fonts should come from the same family. Fitting accounts conservatively for differences in their character widths, including Verdana’s wider italic characters.
+Typical Windows paths are `C:\Windows\Fonts\verdana.ttf`, `C:\Windows\Fonts\verdanai.ttf`, and `C:\Windows\Fonts\verdanab.ttf`; supply these with the font-path options. Linux users must provide their own installed font files. Regular and italic fonts should come from the same family. Fitting accounts conservatively for differences in their character widths, including Verdana’s wider italic characters.
 
 ## Prepare the Excel file
 
@@ -200,7 +200,7 @@ Both layouts default to **0.68 × 0.33-inch labels**, with 0.02-inch horizontal/
 
 All main and habitat text stays behind an invisible boundary left of the barcode, including above and below it. Habitat text also stops at least 1.5 points before the actual Field Number, so long codes cannot crowd it. Catalog and field numbers have separate positions. The Data Matrix is vertically centered; catalog text is 3.75 points and field-number text defaults to 4 points. The Field Number uses Verdana when available, otherwise Arial, with its own 60% horizontal scale to stay clear of the main text and barcode. The Field Number is right-aligned in its reserved space. Habitat text on the main label has a stricter right boundary that guarantees at least 1.5 points of horizontal separation from the Field Number.
 
-Text normally uses 75% horizontal scale. In the standard normal layout, latitude/longitude beside uncertainty uses 61% scale, and the uncertainty term is always 3.5 points. The coordinate line stays on line 3; elevation/date stay on line 4.
+Verdana body text uses 70% horizontal scale and its coordinates use 49%. Arial body text uses 75% and its coordinates use 61%. In the standard normal layout, the uncertainty term is always 3.5 points. The coordinate line stays on line 3; elevation/date stay on line 4.
 
 The program first tries to retain all information, then may omit coordinate uncertainty. For the standard habitat template, if the label still cannot fit, it tries microhabitat alone. It never automatically removes microhabitat. The JSON report records omitted uncertainty/macrohabitat, rendered lines, font sizes, positions, and text runs. Review that report when completeness matters. These fallbacks can differ between the two layouts.
 
@@ -232,16 +232,16 @@ The blank Excel templates provide advisory header comments rather than character
 | `--coordinate-scale FACTOR` | `.61` Arial / `.49` Verdana | Horizontal coordinate scale; font height unchanged. |
 | `--label-rendering vector\|raster` | `vector` | Keep text vector-based, or rasterize entire labels with Poppler. |
 | `--layout lines\|flow` | `lines` | Separate-line or comma-separated wrapped layout. |
-| `--font-family arial\|verdana` | `arial` | Select matching main, catalog, habitat, italic, and bold-heading fonts. |
+| `--font-family arial\|verdana` | `verdana` | Select matching main, catalog, habitat, italic, and bold-heading fonts. |
 | `--main-size 4\|3.5` | `4` | Preferred main-text size. `4` permits per-line fallback; `3.5` uses the smaller normal-layout profile. |
 | `--template PATH` | Built-in six entries | Load a JSON template. |
 | `--sheet NAME` | Active sheet | Select a worksheet. |
-| `--font PATH` | macOS Arial path | Regular Arial `.ttf` file. |
-| `--italic-font PATH` | macOS Arial Italic path | Matching italic `.ttf` file. |
+| `--font PATH` | macOS Verdana path | Regular selected-family `.ttf` file. |
+| `--italic-font PATH` | macOS Verdana Italic path | Matching italic `.ttf` file. |
 | `--guides` | Off | Draw light cutting rectangles. |
 | `--field-size 3.5\|4` | `4` | Field Number size on each main label. |
 | `--field-font PATH` | Verdana if available, otherwise Arial | Optional `.ttf` font for Field Numbers only. |
-| `--heading-font PATH` | Arial Bold beside the regular font | Bold `.ttf` for the field block headings. |
+| `--heading-font PATH` | Selected-family Bold beside the regular font | Bold `.ttf` for the field block headings. |
 | `--no-field-headings` | Off | Disable the field block headings. |
 | `--include-method` | Off | Include sampling protocol on the separate habitat label; requires `--separate-habitat`. |
 | `--separate-habitat` | Off | Put macrohabitat and microhabitat on a smaller label below the main label. |
@@ -262,9 +262,9 @@ python label_maker.py "/path/to/specimens.xlsx" --layout flow --height 0.40 --ou
 
 The barcode and catalog number remain vertically centered, and page row counts adapt to the chosen height. A taller label can fit more wrapped lines, but it does not solve an individual text line or word that is too wide; shorten that text or use the wrapped layout. Barcode scale is configurable with `--barcode-scale`; some positioning and page-gap settings remain constants in `label_maker.py`. Longer catalog identifiers may require more height or a larger barcode to scan reliably.
 
-## All-Verdana preview
+## Font family
 
-Use `--font-family verdana` to use Verdana for the main text, coordinates, catalog numbers, habitat text, scientific-name italics, and bold block headings. Field Numbers already default to Verdana. The default main family remains Arial so existing commands keep their approved appearance.
+Verdana is the default for main text, coordinates, catalog numbers, habitat text, scientific-name italics, and bold block headings. Field Numbers also use Verdana by default. Use `--font-family arial` for Arial. Existing PDF files retain the font used when they were generated; rerun the tool to use the new default.
 
 ```sh
 python label_maker.py "/path/to/specimens.xlsx" --separate-habitat --font-family verdana --output output/all_verdana.pdf
@@ -276,9 +276,9 @@ The selected family defaults to its matching regular, italic, and bold font file
 
 Field Numbers connect the printed labels to pre-labeled specimens. By default, the sheet inserts a **5-point bold** heading such as `---- EVT001 ----` whenever `Field_Number` changes. Smaller 3.5-point dashes extend across the rest of the column on both sides, while the number remains bold at 5 points. Headings are outside the specimen labels and repeat when a field block continues into another column or page. Label/habitat pairs stay together. Rows remain in spreadsheet order; the tool does not sort or merge noncontiguous runs of the same Field Number. Blank Field Numbers do not produce a heading.
 
-On each main label, the Field Number defaults to **4-point Verdana** at 60% horizontal scale. This changes only the event code; locality and catalog fonts remain unchanged. Verdana is used if `Verdana.ttf` is installed beside the supplied Arial font. Otherwise the tool uses regular Arial and reports the chosen filename in the console and JSON. Font files are not included in the distribution.
+On each main label, the Field Number defaults to **4-point Verdana** at 60% horizontal scale. This changes only the event code; locality and catalog fonts remain unchanged. Verdana is used if `Verdana.ttf` is installed beside the selected main font. Otherwise the tool uses the selected main font and reports the chosen filename in the console and JSON. Font files are not included in the distribution.
 
-Use `--field-size 3.5` for smaller event codes or `--field-font "/path/to/Verdana.ttf"` to select a font explicitly. Long codes must fit within the reserved area; they are not silently shrunk or truncated. The bold heading font defaults to `Arial Bold.ttf` (or `arialbd.ttf`) beside the regular font. Supply `--heading-font "/path/to/bold.ttf"` if needed, or `--no-field-headings` to restore the previous sheet layout. These options work with both text layouts and with separate habitat labels.
+Use `--field-size 3.5` for smaller event codes or `--field-font "/path/to/Verdana.ttf"` to select a font explicitly. Long codes must fit within the reserved area; they are not silently shrunk or truncated. The bold heading font defaults to the selected family’s bold font beside the regular font. Supply `--heading-font "/path/to/bold.ttf"` if needed, or `--no-field-headings` to restore the previous sheet layout. These options work with both text layouts and with separate habitat labels.
 
 [Verdana’s Microsoft documentation](https://learn.microsoft.com/en-us/typography/font-list/verdana) describes its generous character spacing and small-size legibility. Actual tiny-print legibility depends on the printer and paper: compare digits such as 6 and 8 at actual size before choosing a font.
 
@@ -290,7 +290,7 @@ Add `--separate-habitat` to move habitat out of the main label. Each specimen ge
 python label_maker.py "/path/to/specimens.xlsx" --template label_template.json --separate-habitat --output output/label_pairs.pdf
 ```
 
-The habitat label defaults to **0.62 × 0.20 inches**, narrower than the main label. It contains `MacroHabitat_Label`, then `Microhabitat_Label`, in separate left-aligned blocks. Either field may wrap, up to **three physical lines total**. The full text block is centered vertically and always uses **4-point Arial**, at the usual 75% horizontal scale. Scientific-name italics remain on the microhabitat line. There is no barcode on the smaller label; it uses the full available width.
+The habitat label defaults to **0.62 × 0.20 inches**, narrower than the main label. It contains `MacroHabitat_Label`, then `Microhabitat_Label`, in separate left-aligned blocks. Either field may wrap, up to **three physical lines total**. The full text block is centered vertically and always uses **4-point text in the selected family** (Verdana at 70% horizontal scale by default; Arial at 75%). Scientific-name italics remain on the microhabitat line. There is no barcode on the smaller label; it uses the full available width.
 
 Both habitat columns are required for this option, but values may be blank. A pair is reserved for every specimen. The program preserves both habitat values instead of applying the macrohabitat-omission fallback. The program wraps at word boundaries without shrinking or truncating text. It reports an error if a word is too wide, the text needs more than the selected maximum of two or three lines, or the chosen height cannot accommodate those lines.
 
@@ -332,7 +332,7 @@ Print at **100% / Actual Size**, with “Fit to page” disabled. Use normal/hig
 
 - **Cannot fit:** inspect the reported row, shorten label-specific wording, remove unnecessary plant-family names, or try `--layout flow`. Width is capped at 0.68 inch for curation. If appropriate, try a taller label with `--height 0.40`.
 - **Unknown template field:** check capitalization and header spelling; use one of the documented aliases where appropriate.
-- **Missing font:** provide the regular and italic Arial paths explicitly.
+- **Missing font:** provide the selected family’s regular, italic, and bold font paths explicitly.
 - **Dates or formulas look wrong:** check cell types and save recalculated formula values in Excel.
 - **Leading zeros disappeared:** store identifiers as text in the workbook.
 

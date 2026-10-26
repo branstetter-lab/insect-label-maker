@@ -235,7 +235,7 @@ class LabelTests(unittest.TestCase):
             output = root / 'pairs.pdf'
             book.save(source)
             result = subprocess.run([sys.executable, str(script), str(source), '--separate-habitat',
-                                     '--output', str(output)], capture_output=True, text=True)
+                                     '--output', str(output), '--font-family', 'arial'], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             report = json.loads(output.with_suffix('.json').read_text())
             self.assertEqual(report['physical_labels'], 442)

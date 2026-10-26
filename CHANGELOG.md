@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Made Verdana the default family for all label text; Arial remains available explicitly. Existing PDFs are unchanged.
+
 - Keep latitude/longitude and uncertainty together in wrapped layouts and apply coordinate-specific compression during fitting and rendering.
 
 - Require 1200-dpi raster Data Matrix barcodes in every label mode; vector label text remains the default.

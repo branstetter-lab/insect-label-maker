@@ -15,7 +15,7 @@ class SpecialLabels(unittest.TestCase):
         book=openpyxl.Workbook();sheet=book.active;sheet.append(headers)
         for row in rows:sheet.append(row)
         book.save(source)
-        result=subprocess.run([sys.executable,'label_maker.py',str(source),'--mode',mode,'--output',str(out),*extra],capture_output=True,text=True)
+        result=subprocess.run([sys.executable,'label_maker.py',str(source),'--mode',mode,'--output',str(out),'--font-family','arial',*extra],capture_output=True,text=True)
         return result,out
     def test_generic_ids_only_and_omit_text(self):
         with tempfile.TemporaryDirectory() as root:
@@ -86,4 +86,13 @@ class SpecialLabels(unittest.TestCase):
             result,_=self.run_mode(root,['Catalog_Number'],[['DEMO000001']],'barcode','--barcode-rendering','vector')
             self.assertNotEqual(result.returncode,0)
             self.assertIn('invalid choice',result.stderr)
+    def test_command_default_is_verdana(self):
+        with tempfile.TemporaryDirectory() as root:
+            out=Path(root)/'default.pdf'
+            result=subprocess.run([sys.executable,'label_maker.py','examples/example_specimens.xlsx','--output',str(out)],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            report=json.loads(out.with_suffix('.json').read_text())
+            self.assertEqual(report['font'],'Verdana')
+            self.assertEqual(report['text_horizontal_scale'],.70)
+            self.assertEqual(report['coordinate_horizontal_scale'],.49)
 if __name__=='__main__':unittest.main()

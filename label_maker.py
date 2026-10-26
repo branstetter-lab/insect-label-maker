@@ -871,7 +871,7 @@ def main():
     p.add_argument('-o', '--output', default='output/labels.pdf')
     p.add_argument('--sheet')
     p.add_argument('--layout', choices=['lines', 'flow'], default='lines', help='Separate fields into lines, or wrap comma-separated fields')
-    p.add_argument('--font-family', choices=['arial', 'verdana'], default='arial', help='Main, catalog, and habitat font family (default arial)')
+    p.add_argument('--font-family', choices=['arial', 'verdana'], default='verdana', help='Main, catalog, and habitat font family (default verdana)')
     p.add_argument('--italic-font', help='Matching italic .ttf path; defaults to the selected family')
     p.add_argument('--main-size', type=float, choices=[3.5, 4.0], default=4.0, help='Font size for the first five physical text lines')
     p.add_argument('--template', help='JSON list of lines with [Excel_Column] placeholders')
