@@ -125,9 +125,19 @@ python label_maker.py input.xlsx --mode collection-only --output output/collecti
 python label_maker.py input.xlsx --mode collection-only --separate-habitat --output output/collection_and_habitat.pdf
 ```
 
-Default main size is **0.64 × 0.30 inches**, smaller than the standard barcode-bearing label. Its text uses the full interior width (about 45.08 points versus 31.44 points on the standard label). Data reflows into **at most five physical lines**, with a preference for 4 pt and per-line fallback to 3.5 pt; habitat text stays 3.5 pt on a combined label. Coordinates and uncertainty stay together. No fields are automatically omitted: if the complete text cannot fit, the tool reports an error. Text remains left aligned and the whole block is vertically centered. `--layout` does not change this mode's five-line wrapping policy.
+Default main size is **0.68 × 0.33 inches**, using the full text width (about 47.96 points). The main label uses **five fixed 4-point lines**, with no automatic shrinking or moving fields between lines:
 
-With `--separate-habitat`, the smaller label defaults to **0.56 × 0.20 inches**, with the existing 0.02-inch gap, 4-point text, and maximum three lines. Add `--include-method` to include sampling protocol there. The main collection label still has a five-line limit. `--width`, `--height`, and habitat sizing options can be adjusted explicitly; maximum main width remains 0.68 inch.
+1. Country, state/province, county.
+2. Locality.
+3. Coordinates, uncertainty, elevation.
+4. Collection date, first collector, and `#Field_Number`.
+5. Macrohabitat and microhabitat, or a blank reserved line when habitat is separate.
+
+Only the first collector is printed; the input's full collector list remains unchanged. An optional `First_Collector_Label` column explicitly controls the displayed name when name separators are ambiguous. Initial-first comma-separated display names, semicolon-separated names, and names separated by “and” or “&” are supported. Surname-first names such as `Branstetter, M.` are retained as one name.
+
+Verdana body text uses 62% horizontal scale in this mode (Arial: 70%) to accommodate the combined fields at 4 pt. Coordinates retain their separate compression, but uncertainty is also 4 pt. Equal baseline spacing keeps line positions consistent across labels, including paired versions. If a line does not fit, the tool reports that line rather than shrinking text, dropping information, or reflowing it. Use shorter display wording or an explicit custom template with at most five fixed lines. `--layout` does not change this mode's fixed-line policy; `--main-size` must be 4.
+
+With `--separate-habitat`, the smaller label defaults to **0.56 × 0.20 inches**, with the existing 0.02-inch gap, 4-point text, and maximum three lines. Add `--include-method` to include sampling protocol there. The main collection label retains the same first four lines and leaves its fifth-line position blank. The smaller habitat label uses the same selected-family horizontal scale as the main collection-only label. `--width`, `--height`, and habitat sizing options can be adjusted explicitly; maximum main width remains 0.68 inch.
 
 Use [the collection-only template](templates/collection_only_input_template.xlsx), or the `Collection_Only` / `Collection_Only_Paired` sheets in the all-options workbook. **Catalog_Number is not required in this mode**, and an existing column is ignored for printing. Enter one row per desired label; identical event rows are allowed for printing multiple copies. This mode does not allocate IDs or print existing IDs, so keep any separately assigned barcode linked to its cataloged pin or vial in your records.
 

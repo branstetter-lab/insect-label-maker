@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Enlarged collection-only labels to 0.68 × 0.33 inches with five fixed 4-point lines, first collector only, and unchanged input collector lists.
+
 - Added five-line collection-only labels, optionally paired with a separate habitat/method label, without Catalog Number requirements or barcode artwork.
 - Expanded the printable sampler and all-options workbooks to nine layouts.
 

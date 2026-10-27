@@ -7,10 +7,12 @@
   "font": "Verdana",
   "labels": 1,
   "physical_labels": 1,
-  "width_inches": 0.64,
-  "height_inches": 0.3,
+  "width_inches": 0.68,
+  "height_inches": 0.33,
   "max_main_lines": 5,
-  "text_width_points": 45.08,
+  "text_horizontal_scale": 0.62,
+  "main_font_points": 4,
+  "text_width_points": 47.96,
   "separate_habitat": false,
   "habitat_label_width_inches": null,
   "habitat_label_height_inches": null,
@@ -24,9 +26,9 @@
       "placement": {
         "page": 1,
         "x_points": 18.0,
-        "y_points": 744.4,
+        "y_points": 742.24,
         "heading": {
-          "text": "---- MGB4209 ----",
+          "text": "----- MGB4209 -----",
           "field_number": "MGB4209",
           "continued": false,
           "x_points": 18.0,
@@ -35,43 +37,43 @@
       },
       "habitat_label": null,
       "lines": [
-        "USA: UT, Cache Co., Tony Grove,",
-        "0.5km NNE, 41.89971 -111.64205\u00b1200m,",
-        "2500m, 24Jun2022, M.Branstetter,",
-        "C.Meidt, alpine meadow, Taraxacum",
-        "officinale #MGB4209"
+        "USA: UT, Cache Co.",
+        "Tony Grove, 0.5km NNE",
+        "41.89971 -111.64205\u00b1200m, 2500m",
+        "24Jun2022, M.Branstetter #MGB4209",
+        "alpine meadow; Taraxacum officinale"
       ],
       "line_font_points": [
-        3.5,
-        3.5,
-        3.5,
-        3.5,
-        3.5
+        4,
+        4,
+        4,
+        4,
+        4
       ],
       "baselines": [
-        17.6971875,
-        13.597187499999999,
-        9.497187499999999,
-        5.397187499999999,
-        1.2971874999999997
+        19.5637890625,
+        15.1637890625,
+        10.763789062499999,
+        6.363789062499999,
+        1.9637890624999983
       ],
       "italic_ranges": [
         [],
         [],
         [],
+        [],
         [
           [
-            24,
-            33
-          ]
-        ],
-        [
+            15,
+            24
+          ],
           [
-            0,
-            10
+            25,
+            35
           ]
         ]
-      ]
+      ],
+      "first_collector_label": "M.Branstetter"
     }
   ]
 }

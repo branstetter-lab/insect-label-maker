@@ -7,10 +7,12 @@
   "font": "Verdana",
   "labels": 1,
   "physical_labels": 2,
-  "width_inches": 0.64,
-  "height_inches": 0.3,
+  "width_inches": 0.68,
+  "height_inches": 0.33,
   "max_main_lines": 5,
-  "text_width_points": 45.08,
+  "text_horizontal_scale": 0.62,
+  "main_font_points": 4,
+  "text_width_points": 47.96,
   "separate_habitat": true,
   "habitat_label_width_inches": 0.56,
   "habitat_label_height_inches": 0.2,
@@ -24,9 +26,9 @@
       "placement": {
         "page": 1,
         "x_points": 18.0,
-        "y_points": 744.4,
+        "y_points": 742.24,
         "heading": {
-          "text": "---- MGB4209 ----",
+          "text": "----- MGB4209 -----",
           "field_number": "MGB4209",
           "continued": false,
           "x_points": 18.0,
@@ -68,14 +70,14 @@
         "width_inches": 0.56,
         "page": 1,
         "x_points": 18.0,
-        "y_points": 728.56
+        "y_points": 726.4
       },
       "lines": [
-        "USA: UT, Cache Co., Tony",
-        "Grove, 0.5km NNE,",
-        "41.89971 -111.64205\u00b1200m, 2500m,",
-        "24Jun2022, M.Branstetter,",
-        "C.Meidt #MGB4209"
+        "USA: UT, Cache Co.",
+        "Tony Grove, 0.5km NNE",
+        "41.89971 -111.64205\u00b1200m, 2500m",
+        "24Jun2022, M.Branstetter #MGB4209",
+        ""
       ],
       "line_font_points": [
         4,
@@ -85,11 +87,11 @@
         4
       ],
       "baselines": [
-        17.510999999999996,
-        13.410999999999996,
-        9.310999999999996,
-        5.210999999999997,
-        1.110999999999997
+        19.5637890625,
+        15.1637890625,
+        10.763789062499999,
+        6.363789062499999,
+        1.9637890624999983
       ],
       "italic_ranges": [
         [],
@@ -97,7 +99,8 @@
         [],
         [],
         []
-      ]
+      ],
+      "first_collector_label": "M.Branstetter"
     }
   ]
 }
