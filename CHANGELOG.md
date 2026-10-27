@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Set wrapped collection-only labels to 0.60 × 0.38 inches, allow latitude/longitude to wrap separately, and balance line widths while retaining all fields at 4 pt.
+
 - Added a wrapped single collection-only layout at 4 pt, preserving coordinate pairs and the six-line maximum. Expanded sampler/workbooks to ten layouts.
 
 - Collection-only labels now use six fixed lines when combined, or five main lines plus up to three separate habitat/method lines. Coordinates, elevation/date, and collector/event code each have their own line. The six-line version is 0.38 inches high to retain 4-point text.

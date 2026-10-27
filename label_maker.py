@@ -721,6 +721,14 @@ def first_collector_label(row):
 
 def collection_only_runs(row, text):
     # All printed characters, including coordinate uncertainty, stay at 4 pt.
+    if LAYOUT_MODE == 'flow' and row.get('Latitude') and row.get('Longitude'):
+        pattern = '|'.join(re.escape(row[key]) for key in ('Latitude','Longitude'))
+        runs=[];offset=0
+        for match in re.finditer(pattern,text):
+            if match.start()>offset:runs.append((text[offset:match.start()],4,TEXT_SCALE))
+            runs.append((match.group(),4,COORDINATE_SCALE));offset=match.end()
+        if offset<len(text):runs.append((text[offset:],4,TEXT_SCALE))
+        return runs or [(text,4,TEXT_SCALE)]
     return [(part, 4, scale) for part, _, scale in coordinate_runs(row, text, 4, combined=True)]
 
 
@@ -740,20 +748,13 @@ def collection_only_plan(row, label_width, templates, max_lines=6, wrapped=False
         raise ValueError(f"Excel row {row['_excel_row']}: no collection text to print.")
     available = label_width - 2 * PAD
     if wrapped:
-        coordinates = f"{row.get('Latitude', '')} {row.get('Longitude', '')}"
-        if row.get('Uncertainty'):
-            coordinates += f"±{row['Uncertainty']}m"
         tokens = []
         for text in texts:
             if not text.strip():
                 continue
             if tokens:
                 tokens[-1] = tokens[-1].rstrip(',;') + ','
-            if row.get('Latitude') and row.get('Longitude') and coordinates in text:
-                before,after=text.split(coordinates,1)
-                tokens.extend(before.split());tokens.append(coordinates);tokens.extend(after.split())
-            else:
-                tokens.extend(text.split())
+            tokens.extend(text.split())
         texts=[];current=''
         for token in tokens:
             candidate=(current+' '+token).strip()
@@ -765,6 +766,25 @@ def collection_only_plan(row, label_width, templates, max_lines=6, wrapped=False
         if current:texts.append(current)
         if len(texts)>max_lines:
             raise ValueError(f"Excel row {row['_excel_row']}: wrapped collection text needs {len(texts)} lines; maximum is {max_lines} at 4 pt. Shorten label wording.")
+        # Balance ragged edges instead of greedily filling each line and leaving
+        # an unnecessarily short final line. Font height remains exactly 4 pt.
+        @lru_cache(maxsize=None)
+        def balance(start, remaining):
+            if start == len(tokens):return (0, ())
+            if remaining == 0:return None
+            best=None
+            for end in range(start+1,len(tokens)+1):
+                text=' '.join(tokens[start:end])
+                used=sum(fit_width(t,sz)/TEXT_SCALE*scale for t,sz,scale in collection_only_runs(display,text))
+                if used>available:break
+                tail=balance(end,remaining-1)
+                if tail is None:continue
+                score=.05+((available-used)/available)**2+tail[0]
+                candidate=(score,(text,)+tail[1])
+                if best is None or score<best[0]:best=candidate
+            return best
+        balanced=balance(0,max_lines)
+        if balanced is not None:texts=list(balanced[1])
     for index, text in enumerate(texts, 1):
         measured = sum(fit_width(part, size) / TEXT_SCALE * scale for part, size, scale in collection_only_runs(display,text))
         if measured > available:
@@ -840,7 +860,7 @@ def generate_collection_only(args, rows):
 def generate(args):
     global BARCODE_RENDERING, BAR
     mode = getattr(args, 'mode', 'locality')
-    if args.width is None: args.width = .32 if mode == 'pin-barcode' else .55 if mode == 'barcode' else .68
+    if args.width is None: args.width = .60 if mode == 'collection-only' and args.layout == 'flow' else .32 if mode == 'pin-barcode' else .55 if mode == 'barcode' else .68
     if args.height is None: args.height = .38 if mode == 'collection-only' and not args.separate_habitat else .30 if mode in {'barcode','pin-barcode'} else .33
     if args.habitat_width is None: args.habitat_width = .56 if mode == 'collection-only' else .62
     if args.barcode_scale is None: args.barcode_scale = 1.05 if mode in {'barcode','determination'} else 1.02

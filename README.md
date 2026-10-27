@@ -146,7 +146,9 @@ For a **wrapped single collection label**, add `--layout flow`:
 python label_maker.py input.xlsx --mode collection-only --layout flow --output output/collection_wrapped.pdf
 ```
 
-This retains 4-point type and the same 0.68 × 0.38-inch size, but joins fields with commas and wraps them into up to six lines. Latitude/longitude and uncertainty stay together. Only the first collector and collection number are printed, and no collection fields are automatically dropped. If it cannot fit, generation stops with a fit error. This wrapped option is not used with `--separate-habitat`; paired labels keep the five fixed main lines and up to three habitat lines. [Printable wrapped example](examples/example_labels_collection_only_flow.pdf).
+This retains 4-point type at **0.60 × 0.38 inches**, joins fields with commas, and balances the wrapped text across up to six lines. Latitude and longitude may fall on different lines in this collection-only layout; each numeric value stays intact and uncertainty remains attached to longitude. Barcode-bearing wrapped labels continue to keep latitude/longitude together. Only the first collector and collection number are printed, and no collection fields are automatically dropped. If it cannot fit, generation stops with a fit error. This wrapped option is not used with `--separate-habitat`; paired labels keep the five fixed main lines and up to three habitat lines. [Printable wrapped example](examples/example_labels_collection_only_flow.pdf).
+
+<img src="docs/images/collection_only_flow.png" width="250" alt="Balanced wrapped collection label at 0.60 by 0.38 inches">
 
 Use [the collection-only template](templates/collection_only_input_template.xlsx), or the `Collection_Only` / `Collection_Only_Paired` sheets in the all-options workbook. **Catalog_Number is not required in this mode**, and an existing column is ignored for printing. Enter one row per desired label; identical event rows are allowed for printing multiple copies. This mode does not allocate IDs or print existing IDs, so keep any separately assigned barcode linked to its cataloged pin or vial in your records.
 

@@ -8,12 +8,12 @@
   "font": "Verdana",
   "labels": 1,
   "physical_labels": 1,
-  "width_inches": 0.68,
+  "width_inches": 0.6,
   "height_inches": 0.38,
   "max_main_lines": 6,
   "text_horizontal_scale": 0.62,
   "main_font_points": 4,
-  "text_width_points": 47.96,
+  "text_width_points": 42.199999999999996,
   "separate_habitat": false,
   "habitat_label_width_inches": null,
   "habitat_label_height_inches": null,
@@ -29,7 +29,7 @@
         "x_points": 18.0,
         "y_points": 738.64,
         "heading": {
-          "text": "----- MGB4209 -----",
+          "text": "--- MGB4209 ---",
           "field_number": "MGB4209",
           "continued": false,
           "x_points": 18.0,
@@ -38,9 +38,10 @@
       },
       "habitat_label": null,
       "lines": [
-        "USA: UT, Cache Co., Tony Grove,",
-        "0.5km NNE, 41.89971 -111.64205\u00b1200m,",
-        "2500m, 24Jun2022, M.Branstetter",
+        "USA: UT, Cache Co., Tony",
+        "Grove, 0.5km NNE, 41.89971",
+        "-111.64205\u00b1200m, 2500m,",
+        "24Jun2022, M.Branstetter",
         "#MGB4209, alpine meadow;",
         "Taraxacum officinale"
       ],
@@ -49,16 +50,19 @@
         4,
         4,
         4,
+        4,
         4
       ],
       "baselines": [
-        21.3637890625,
-        16.9637890625,
-        12.5637890625,
-        8.1637890625,
-        3.763789062499999
+        23.5637890625,
+        19.1637890625,
+        14.763789062499999,
+        10.363789062499999,
+        5.963789062499998,
+        1.5637890624999997
       ],
       "italic_ranges": [
+        [],
         [],
         [],
         [],
