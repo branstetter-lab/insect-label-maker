@@ -26,7 +26,7 @@ The budget is shared by all fields and separators on a line:
 - Line 5: Collector_Label. Spaces after initials are removed during rendering.
 - Line 6: MacroHabitat_Label + `; ` + Microhabitat_Label. This line always uses 3.5 pt in the normal profile and may have less room depending on the Field Number. The full habitat may fall back to microhabitat alone, as recorded in the report.
 
-Separate habitat labels, wrapped layouts, generic barcode labels, determination labels, and vertical Catalog Numbers have different width/height constraints. This table does not establish limits for them. Larger barcode scales, smaller label widths, alternate fonts, and custom horizontal scales change capacities.
+Collection-only labels without barcodes, separate habitat labels, wrapped layouts, generic barcode labels, determination labels, and vertical Catalog Numbers have different width/height constraints. This table does not establish limits for them. Larger barcode scales, smaller label widths, alternate fonts, and custom horizontal scales change capacities.
 
 ## Entry guidance versus validation
 

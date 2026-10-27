@@ -8,7 +8,7 @@ The tool runs locally, reads the workbook without changing it, and exports a US 
 
 ## Try all label options
 
-Download the [printable seven-layout sampler](examples/label_options_sampler.pdf) and [filled example workbook](examples/label_options_examples.xlsx). Each layout has its own worksheet; the Instructions worksheet lists the corresponding command options. The sampler shows actual-size labels with light boundary guides. Six layouts use the real collection record BBSL1207977 / MGB4209, shared with permission; the determination layout remains explicitly fictional because no specimen determination was supplied. Catalog IDs are intentionally repeated across alternative layouts. The sampler notes any automatic fit-related omissions. Print at 100%, not Fit to page.
+Download the [printable nine-layout sampler](examples/label_options_sampler.pdf) and [filled example workbook](examples/label_options_examples.xlsx). Each layout has its own worksheet; the Instructions worksheet lists the corresponding command options. The sampler shows actual-size labels with light boundary guides. Eight layouts use the real collection record BBSL1207977 / MGB4209, shared with permission; the determination layout remains explicitly fictional because no specimen determination was supplied. Catalog IDs are intentionally repeated across alternative layouts. The sampler notes any automatic fit-related omissions. Print at 100%, not Fit to page.
 
 The [blank all-options workbook](templates/all_options_input_template.xlsx) contains matching empty worksheets. Select the worksheet with `--sheet`, and use the flags listed on its Instructions worksheet. These are alternative views of the same example records, not seven new specimen sets.
 
@@ -21,7 +21,7 @@ These enlarged previews use **BBSL1207977 / MGB4209**, a real Tony Grove collect
 | <img src="docs/images/readme_real_lines.png" width="240" alt="Real Tony Grove label with separate data lines"> | <img src="docs/images/readme_real_flow.png" width="240" alt="Real Tony Grove label with wrapped text and intact coordinates"> | <img src="docs/images/readme_real_method.png" width="240" alt="Real Tony Grove collection label with a separate habitat and net sampling protocol label"> |
 | [Print PDF](examples/sampler_real_lines.pdf) | [Print PDF](examples/sampler_real_flow.pdf) | [Print PDF](examples/sampler_real_method.pdf) |
 
-The printed data include `USA: UT, Cache Co.`, `Tony Grove, 0.5km NNE`, coordinates `41.89971 -111.64205` with `±200m` uncertainty, `2500m, 24Jun2022`, and collectors `M. Branstetter, C. Meidt`. The separate habitat label shows `alpine meadow`, *Taraxacum officinale*, and optional method `net`. In the normal single-label example, macrohabitat is omitted by the documented fit fallback; the wrapped and paired examples retain it.
+The printed data include `USA: UT, Cache Co.`, `Tony Grove, 0.5km NNE`, coordinates `41.89971 -111.64205` with `±200m` uncertainty, `2500m, 24Jun2022`, and collectors `M. Branstetter, C. Meidt`. The separate habitat label shows `alpine meadow`, *Taraxacum officinale*, and optional method `net`. In the current Verdana normal and wrapped single-label examples, macrohabitat is omitted by the documented fit fallback; the paired example retains it.
 
 ### Where each field goes
 
@@ -107,9 +107,29 @@ The supplied template uses these columns:
 | `Microhabitat_Label` | Collection substrate, plant, or method, e.g. `Phacelia sp.` or `pan traps`. May be blank. |
 | `Field_Number` | Optional collection-event identifier, e.g. `EVT001`, printed near the barcode. This column may be omitted. |
 
-All template-referenced headers must exist, even when their cells are blank. `Catalog_Number` is always required, including with a custom template. Store identifiers as Excel **text** if leading zeros matter. Completely empty rows are skipped; other rows with a missing catalog number or duplicate catalog numbers are rejected. No extra copies are generated from specimen-count columns.
+All template-referenced headers must exist, even when their cells are blank. `Catalog_Number` is required for all barcode-bearing modes, including with a custom template; collection-only mode is the exception. Store identifiers as Excel **text** if leading zeros matter. Completely empty rows are skipped. In barcode-bearing modes, other rows with a missing catalog number or duplicate catalog numbers are rejected. Collection-only mode does not require catalog numbers and permits repeated event rows. No extra copies are generated from specimen-count columns.
 
 Keep the full scientific data in other columns and use the label-specific fields for concise wording. Text is not silently truncated. Formulas use their last saved calculated values: recalculate and save in Excel before importing. Text dates are preserved; actual Excel dates are formatted as `12/Jul/2026`. Coordinates retain up to 12 significant digits.
+
+## Collection labels without barcodes
+
+These compact labels follow the collection-only workflow often used with separate barcode labels. They print **no Data Matrix and no Catalog Number**. Field Number is retained as `#MGB4209` (for example) in the collection text, with optional event block headings on the sheet.
+
+| Collection text and habitat together | Collection text with separate habitat/method |
+| --- | --- |
+| <img src="docs/images/collection_only.png" width="250" alt="Five-line collection label without a barcode"> | <img src="docs/images/collection_only_paired.png" width="250" alt="Collection-only label and smaller habitat/method label"> |
+| [Print PDF](examples/example_labels_collection_only.pdf) | [Print PDF](examples/example_labels_collection_only_paired.pdf) |
+
+```sh
+python label_maker.py input.xlsx --mode collection-only --output output/collection.pdf
+python label_maker.py input.xlsx --mode collection-only --separate-habitat --output output/collection_and_habitat.pdf
+```
+
+Default main size is **0.64 × 0.30 inches**, smaller than the standard barcode-bearing label. Its text uses the full interior width (about 45.08 points versus 31.44 points on the standard label). Data reflows into **at most five physical lines**, with a preference for 4 pt and per-line fallback to 3.5 pt; habitat text stays 3.5 pt on a combined label. Coordinates and uncertainty stay together. No fields are automatically omitted: if the complete text cannot fit, the tool reports an error. Text remains left aligned and the whole block is vertically centered. `--layout` does not change this mode's five-line wrapping policy.
+
+With `--separate-habitat`, the smaller label defaults to **0.56 × 0.20 inches**, with the existing 0.02-inch gap, 4-point text, and maximum three lines. Add `--include-method` to include sampling protocol there. The main collection label still has a five-line limit. `--width`, `--height`, and habitat sizing options can be adjusted explicitly; maximum main width remains 0.68 inch.
+
+Use [the collection-only template](templates/collection_only_input_template.xlsx), or the `Collection_Only` / `Collection_Only_Paired` sheets in the all-options workbook. **Catalog_Number is not required in this mode**, and an existing column is ignored for printing. Enter one row per desired label; identical event rows are allowed for printing multiple copies. This mode does not allocate IDs or print existing IDs, so keep any separately assigned barcode linked to its cataloged pin or vial in your records.
 
 ## Barcode-only and determination labels
 
@@ -226,7 +246,7 @@ The blank Excel templates provide advisory header comments rather than character
 | `excel` | Required | Input `.xlsx` path (positional argument). |
 | `-o`, `--output` | `output/labels.pdf` | PDF path; JSON report uses the same basename. |
 | `--barcode-rendering raster` | `raster` | Compatibility option; all barcode modes always use 1200-dpi raster images. |
-| `--mode locality\|barcode\|determination\|pin-barcode` | `locality` | Choose collection, generic identifier, or determination labels. |
+| `--mode locality\|barcode\|determination\|pin-barcode\|collection-only` | `locality` | Choose collection, generic identifier, or determination labels. |
 | `--omit-catalog-text` | Off | Hide printed catalog text in barcode/determination modes only. |
 | `--barcode-scale FACTOR` | `1.02` locality; `1.05` special modes | Enlarge barcode and quiet margin together; range 1.0–1.1. |
 | `--coordinate-scale FACTOR` | `.61` Arial / `.49` Verdana | Horizontal coordinate scale; font height unchanged. |

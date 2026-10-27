@@ -95,4 +95,24 @@ class SpecialLabels(unittest.TestCase):
             self.assertEqual(report['font'],'Verdana')
             self.assertEqual(report['text_horizontal_scale'],.70)
             self.assertEqual(report['coordinate_horizontal_scale'],.49)
+    def test_collection_only_no_catalog_and_five_line_limit(self):
+        with tempfile.TemporaryDirectory() as root:
+            source=Path(root)/'input.xlsx';out=Path(root)/'out.pdf'
+            original=openpyxl.load_workbook('examples/label_options_examples.xlsx',data_only=True)
+            rows=list(original['Collection_Only'].values)
+            book=openpyxl.Workbook();sheet=book.active
+            for row in rows:sheet.append(row)
+            sheet.append(rows[1]);book.save(source)
+            for flags in [[],['--separate-habitat']]:
+                result=subprocess.run([sys.executable,'label_maker.py',str(source),'--mode','collection-only','--output',str(out),*flags],capture_output=True,text=True)
+                self.assertEqual(result.returncode,0,result.stderr)
+                d=json.loads(out.with_suffix('.json').read_text());self.assertEqual(d['labels'],2)
+                self.assertIsNone(d['barcode']);self.assertEqual(d['width_inches'],.64)
+                self.assertTrue(all(len(r['lines'])<=5 for r in d['records']))
+                reader=PdfReader(out);self.assertTrue(all(not list(p.images) for p in reader.pages))
+                self.assertIn('#MGB4209',reader.pages[0].extract_text())
+            col=list(rows[0]).index('LocalityLabel')+1
+            sheet.cell(2,col,'W'*200);book.save(source)
+            result=subprocess.run([sys.executable,'label_maker.py',str(source),'--mode','collection-only','--output',str(out)],capture_output=True,text=True)
+            self.assertNotEqual(result.returncode,0);self.assertIn('five lines',result.stderr)
 if __name__=='__main__':unittest.main()

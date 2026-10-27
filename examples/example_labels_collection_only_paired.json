@@ -1,0 +1,103 @@
+{
+  "mode": "collection-only",
+  "barcode": null,
+  "barcode_rendering": null,
+  "barcode_raster_dpi": null,
+  "catalog_text": false,
+  "font": "Verdana",
+  "labels": 1,
+  "physical_labels": 2,
+  "width_inches": 0.64,
+  "height_inches": 0.3,
+  "max_main_lines": 5,
+  "text_width_points": 45.08,
+  "separate_habitat": true,
+  "habitat_label_width_inches": 0.56,
+  "habitat_label_height_inches": 0.2,
+  "habitat_label_gap_inches": 0.02,
+  "include_method": true,
+  "records": [
+    {
+      "excel_row": 2,
+      "field_number": "MGB4209",
+      "catalog_number": null,
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 744.4,
+        "heading": {
+          "text": "---- MGB4209 ----",
+          "field_number": "MGB4209",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 769
+        }
+      },
+      "habitat_label": {
+        "lines": [
+          "alpine meadow",
+          "Taraxacum officinale",
+          "net"
+        ],
+        "line_sources": [
+          "macrohabitat",
+          "microhabitat",
+          "method"
+        ],
+        "italic_ranges": [
+          [],
+          [
+            [
+              0,
+              9
+            ],
+            [
+              10,
+              20
+            ]
+          ],
+          []
+        ],
+        "font_points": 4,
+        "baselines": [
+          10.306,
+          5.7059999999999995,
+          1.1059999999999999
+        ],
+        "height_inches": 0.2,
+        "width_inches": 0.56,
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 728.56
+      },
+      "lines": [
+        "USA: UT, Cache Co., Tony",
+        "Grove, 0.5km NNE,",
+        "41.89971 -111.64205\u00b1200m, 2500m,",
+        "24Jun2022, M.Branstetter,",
+        "C.Meidt #MGB4209"
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "baselines": [
+        17.510999999999996,
+        13.410999999999996,
+        9.310999999999996,
+        5.210999999999997,
+        1.110999999999997
+      ],
+      "italic_ranges": [
+        [],
+        [],
+        [],
+        [],
+        []
+      ]
+    }
+  ]
+}

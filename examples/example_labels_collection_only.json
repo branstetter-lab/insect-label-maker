@@ -1,0 +1,77 @@
+{
+  "mode": "collection-only",
+  "barcode": null,
+  "barcode_rendering": null,
+  "barcode_raster_dpi": null,
+  "catalog_text": false,
+  "font": "Verdana",
+  "labels": 1,
+  "physical_labels": 1,
+  "width_inches": 0.64,
+  "height_inches": 0.3,
+  "max_main_lines": 5,
+  "text_width_points": 45.08,
+  "separate_habitat": false,
+  "habitat_label_width_inches": null,
+  "habitat_label_height_inches": null,
+  "habitat_label_gap_inches": null,
+  "include_method": false,
+  "records": [
+    {
+      "excel_row": 2,
+      "field_number": "MGB4209",
+      "catalog_number": null,
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 744.4,
+        "heading": {
+          "text": "---- MGB4209 ----",
+          "field_number": "MGB4209",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 769
+        }
+      },
+      "habitat_label": null,
+      "lines": [
+        "USA: UT, Cache Co., Tony Grove,",
+        "0.5km NNE, 41.89971 -111.64205\u00b1200m,",
+        "2500m, 24Jun2022, M.Branstetter,",
+        "C.Meidt, alpine meadow, Taraxacum",
+        "officinale #MGB4209"
+      ],
+      "line_font_points": [
+        3.5,
+        3.5,
+        3.5,
+        3.5,
+        3.5
+      ],
+      "baselines": [
+        17.6971875,
+        13.597187499999999,
+        9.497187499999999,
+        5.397187499999999,
+        1.2971874999999997
+      ],
+      "italic_ranges": [
+        [],
+        [],
+        [],
+        [
+          [
+            24,
+            33
+          ]
+        ],
+        [
+          [
+            0,
+            10
+          ]
+        ]
+      ]
+    }
+  ]
+}

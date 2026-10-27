@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added five-line collection-only labels, optionally paired with a separate habitat/method label, without Catalog Number requirements or barcode artwork.
+- Expanded the printable sampler and all-options workbooks to nine layouts.
+
 - Made Verdana the default family for all label text; Arial remains available explicitly. Existing PDFs are unchanged.
 
 - Keep latitude/longitude and uncertainty together in wrapped layouts and apply coordinate-specific compression during fitting and rendering.

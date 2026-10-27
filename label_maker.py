@@ -63,7 +63,7 @@ def value(v):
     return str(v).strip().replace('\xa0', ' ')
 
 
-def read_rows(path, sheet=None):
+def read_rows(path, sheet=None, require_catalog=True):
     book = openpyxl.load_workbook(path, read_only=True, data_only=True)
     ws = book[sheet] if sheet else book.active
     data = ws.iter_rows(values_only=True)
@@ -75,7 +75,7 @@ def read_rows(path, sheet=None):
         row = dict(zip(headers, map(value, cells)))
         if not any(row.values()):
             continue
-        if not row.get('Catalog_Number'):
+        if require_catalog and not row.get('Catalog_Number'):
             raise ValueError(f'Excel row {number}: Catalog_Number is missing.')
         for alias, source in ALIASES.items():
             row.setdefault(alias, row.get(source, ''))
@@ -84,8 +84,8 @@ def read_rows(path, sheet=None):
         row['_excel_row'] = number
         rows.append(row)
     book.close()
-    ids = [r['Catalog_Number'] for r in rows]
-    if len(ids) != len(set(ids)):
+    ids = [r.get('Catalog_Number', '') for r in rows]
+    if require_catalog and len(ids) != len(set(ids)):
         raise ValueError('Duplicate Catalog_Number values; each specimen must have a unique code.')
     if not rows:
         raise ValueError('No specimen rows found.')
@@ -147,10 +147,10 @@ def label_italic_ranges(lines, microhabitat):
     return result
 
 
-def coordinate_runs(row, line, size):
+def coordinate_runs(row, line, size, combined=False):
     coordinates = f"{row.get('Latitude', '')} {row.get('Longitude', '')}"
     uncertainty = f"±{row.get('Uncertainty', '')}m"
-    if LAYOUT_MODE == 'flow' and row.get('Latitude') and row.get('Longitude') and coordinates in line:
+    if (LAYOUT_MODE == 'flow' or combined) and row.get('Latitude') and row.get('Longitude') and coordinates in line:
         start = line.index(coordinates)
         finish = start + len(coordinates)
         runs = [(line[:start], size, TEXT_SCALE)] if start else []
@@ -705,11 +705,122 @@ def generate_special(args, rows):
     print(f'Created {output}: {len(rows)} {args.mode} labels, {args.width:g} × {args.height:g} in; 4-point text; no collection-event codes.')
 
 
+def collection_only_plan(row, label_width, templates):
+    """Wrap complete collection data into at most five physical lines."""
+    fields = render_lines(row, templates, True)
+    words = []
+    for template, field in zip(templates, fields):
+        if not field.strip():
+            continue
+        if words:
+            text, habitat = words[-1]
+            words[-1] = (text.rstrip(',;') + ',', habitat)
+        habitat = any(key in template for key in ('[MacroHabitat_Label]', '[Microhabitat_Label]'))
+        parts = field.replace(';', ',').split()
+        if '[Latitude]' in template and '[Longitude]' in template:
+            parts = [' '.join(parts)]
+        words.extend((part, habitat) for part in parts)
+    if row.get('Field_Number'):
+        words.append(('#' + row['Field_Number'], False))
+    if not words:
+        raise ValueError(f"Excel row {row['_excel_row']}: no collection text to print.")
+    available = label_width - 2 * PAD
+    @lru_cache(maxsize=None)
+    def fit(start, depth):
+        if start == len(words):
+            return (), ()
+        if depth == 5:
+            return None
+        for size in ([4, 3.5] if MAIN_SIZE == 4 else [3.5]):
+            candidates = []
+            for end in range(start + 1, len(words) + 1):
+                if size == 4 and any(tag for _, tag in words[start:end]):
+                    break
+                text = ' '.join(text for text, _ in words[start:end])
+                if sum(fit_width(t, sz) / TEXT_SCALE * scale for t, sz, scale in coordinate_runs(row,text,size,combined=True)) <= available:
+                    candidates.append((end, text))
+                else:
+                    break
+            for end, text in reversed(candidates):
+                rest = fit(end, depth + 1)
+                if rest is not None:
+                    return (text,) + rest[0], (size,) + rest[1]
+        return None
+    result = fit(0, 0)
+    if result is None:
+        raise ValueError(f"Excel row {row['_excel_row']}: collection text cannot fit in five lines at 4/3.5 pt; shorten label wording or increase --width (maximum 0.68). No fields were omitted.")
+    texts, sizes = result
+    emphasis = label_italic_ranges(list(texts), row.get('Microhabitat_Label', ''))
+    bounds = [ink_bounds(text, size) for text, size in zip(texts, sizes)]
+    italic = ImageFont.truetype(ITALIC_FONT_PATH, 4000)
+    for i, (text, size, spans) in enumerate(zip(texts, sizes, emphasis)):
+        if spans:
+            box = italic.getbbox(text, anchor='ls')
+            bounds[i] = (max(bounds[i][0], -box[1]/1000*size/4), max(bounds[i][1], box[3]/1000*size/4))
+    leading = max([4.1] + [bounds[i][1]+bounds[i+1][0]+.25 for i in range(len(texts)-1)])
+    block_height = bounds[0][0]+leading*(len(texts)-1)+bounds[-1][1]
+    if block_height > HEIGHT-2*PAD:
+        raise ValueError(f"Excel row {row['_excel_row']}: collection text needs more height; increase --height.")
+    first=(HEIGHT+block_height)/2-bounds[0][0]
+    return dict(lines=list(texts), line_font_points=list(sizes), baselines=[first-i*leading for i in range(len(texts))], italic_ranges=emphasis)
+
+
+def generate_collection_only(args, rows):
+    if args.omit_catalog_text:
+        raise ValueError('Collection-only labels never print catalog numbers; omit --omit-catalog-text.')
+    templates = json.loads(Path(args.template).read_text()) if args.template else DEFAULT_LINES
+    if not isinstance(templates, list) or not templates or not all(isinstance(t,str) for t in templates):
+        raise ValueError('Template must be a nonempty list of text entries.')
+    if any(key in text for text in templates for key in ('[Catalog_Number]', '[Field_Number]')):
+        raise ValueError('Collection-only templates must not include catalog/field number placeholders; Field_Number is appended automatically.')
+    if args.separate_habitat:
+        if not math.isfinite(args.habitat_width) or not 0 < args.habitat_width < args.width:
+            raise ValueError('Separate habitat width must be smaller than the main label width.')
+        if not math.isfinite(args.habitat_height) or args.habitat_height <= 0 or not math.isfinite(args.habitat_gap) or args.habitat_gap < 0:
+            raise ValueError('Habitat height must be positive and gap nonnegative.')
+        templates=separate_habitat_templates(templates)
+    width=args.width*72
+    plans=[collection_only_plan(row,width,templates) for row in rows]
+    habitats=[habitat_label_plan(row,args.habitat_width*72,args.habitat_height*72,args.habitat_max_lines,args.include_method) for row in rows] if args.separate_habitat else []
+    pair_height=HEIGHT+(args.habitat_gap+args.habitat_height)*72 if args.separate_habitat else HEIGHT
+    positions=sheet_positions(rows,width,pair_height,not args.no_field_headings)
+    output=Path(args.output);output.parent.mkdir(parents=True,exist_ok=True)
+    temp=output.with_suffix('.tmp.pdf');pdf=canvas.Canvas(str(temp),pagesize=(612,792));pdf.setTitle('Pittacia Insectorum — collection-only labels')
+    def draw(pdf,row,plan,x,y):
+        if args.guides:
+            pdf.setStrokeColorRGB(.8,.8,.8);pdf.setLineWidth(.15);pdf.rect(x,y,width,HEIGHT);pdf.setStrokeColorRGB(0,0,0)
+        for text,size,baseline,spans in zip(plan['lines'],plan['line_font_points'],plan['baselines'],plan['italic_ranges']):
+            cursor=x+PAD;offset=0
+            for part,part_size,scale in coordinate_runs(row,text,size,combined=True):
+                local_spans=[(max(a,offset)-offset,min(b,offset+len(part))-offset) for a,b in spans if a<offset+len(part) and b>offset]
+                draw_text(pdf,cursor,y+baseline,part,size=part_size,italic_ranges=local_spans,horizontal_scale=scale)
+                cursor+=pdfmetrics.stringWidth(part,'LabelRegular',part_size)*scale
+                offset+=len(part)
+    page=1;records=[]
+    for i,(row,plan,pos) in enumerate(zip(rows,plans,positions)):
+        if pos['page']!=page:pdf.showPage();page=pos['page']
+        x,y=pos['x_points'],pos['y_points']
+        if pos['heading']:draw_field_heading(pdf,pos['heading'],width)
+        if args.label_rendering=='raster':draw_raster_label(pdf,lambda small:draw(small,row,plan,0,0),x,y,width,HEIGHT)
+        else:draw(pdf,row,plan,x,y)
+        habitat=None
+        if args.separate_habitat:
+            habitat=dict(habitats[i],page=pos['page'],x_points=x,y_points=y-args.habitat_gap*72-args.habitat_height*72)
+            if args.label_rendering=='raster':draw_raster_label(pdf,lambda small:draw_habitat_label(small,habitat,0,0,args.habitat_width*72,args.guides),x,habitat['y_points'],args.habitat_width*72,args.habitat_height*72)
+            else:draw_habitat_label(pdf,habitat,x,habitat['y_points'],args.habitat_width*72,args.guides)
+        records.append(dict(excel_row=row['_excel_row'],field_number=row.get('Field_Number',''),catalog_number=None,placement=pos,habitat_label=habitat,**plan))
+    pdf.save();temp.replace(output)
+    report=dict(mode='collection-only',barcode=None,barcode_rendering=None,barcode_raster_dpi=None,catalog_text=False,font=pdfmetrics.getFont('LabelRegular').face.familyName.decode(),labels=len(rows),physical_labels=len(rows)*(2 if args.separate_habitat else 1),width_inches=args.width,height_inches=args.height,max_main_lines=5,text_width_points=width-2*PAD,separate_habitat=args.separate_habitat,habitat_label_width_inches=args.habitat_width if args.separate_habitat else None,habitat_label_height_inches=args.habitat_height if args.separate_habitat else None,habitat_label_gap_inches=args.habitat_gap if args.separate_habitat else None,include_method=args.include_method,records=records)
+    output.with_suffix('.json').write_text(json.dumps(report,indent=2))
+    print(f'Created {output}: {len(rows)} collection-only labels, {args.width:g} × {args.height:g} inches; five main lines maximum; no barcode or catalog text.')
+
+
 def generate(args):
     global BARCODE_RENDERING, BAR
     mode = getattr(args, 'mode', 'locality')
-    if args.width is None: args.width = .32 if mode == 'pin-barcode' else .55 if mode == 'barcode' else .68
-    if args.height is None: args.height = .30 if mode in {'barcode','pin-barcode'} else .33
+    if args.width is None: args.width = .64 if mode == 'collection-only' else .32 if mode == 'pin-barcode' else .55 if mode == 'barcode' else .68
+    if args.height is None: args.height = .30 if mode in {'barcode','pin-barcode','collection-only'} else .33
+    if args.habitat_width is None: args.habitat_width = .56 if mode == 'collection-only' else .62
     if args.barcode_scale is None: args.barcode_scale = 1.05 if mode in {'barcode','determination'} else 1.02
     barcode_scale = args.barcode_scale
     if not math.isfinite(barcode_scale) or not 1 <= barcode_scale <= 1.1:
@@ -755,7 +866,7 @@ def generate(args):
     heading_path = Path(args.heading_font) if args.heading_font else font.with_name(family + ' Bold.ttf')
     if not heading_path.is_file():
         heading_path = font.with_name('verdanab.ttf' if family == 'Verdana' else 'arialbd.ttf')
-    if not heading_path.is_file() and not args.no_field_headings and mode == 'locality':
+    if not heading_path.is_file() and not args.no_field_headings and mode in {'locality','collection-only'}:
         raise ValueError('Bold heading font not found. Supply --heading-font with a matching bold .ttf path.')
     if heading_path.is_file():
         pdfmetrics.registerFont(TTFont('FieldHeading', str(heading_path)))
@@ -763,7 +874,10 @@ def generate(args):
         raise ValueError('--omit-catalog-text is only available for barcode/determination labels.')
     if args.include_method and not args.separate_habitat:
         raise ValueError('--include-method requires --separate-habitat.')
-    rows = read_rows(args.excel, args.sheet)
+    rows = read_rows(args.excel, args.sheet, require_catalog=mode != 'collection-only')
+    if mode == 'collection-only':
+        generate_collection_only(args, rows)
+        return
     if mode != 'locality':
         generate_special(args, rows)
         return
@@ -861,7 +975,7 @@ def generate(args):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('excel')
-    p.add_argument('--mode', choices=['locality','barcode','determination','pin-barcode'], default='locality', help='Locality labels, compact generic barcode labels, or taxon/determiner labels')
+    p.add_argument('--mode', choices=['locality','barcode','determination','pin-barcode','collection-only'], default='locality', help='Locality labels, compact generic barcode labels, or taxon/determiner labels')
     p.add_argument('--include-method', action='store_true', help='Add sampling protocol after microhabitat on separate habitat labels; three lines total')
     p.add_argument('--omit-catalog-text', action='store_true', help='Barcode/determination modes: encode the catalog number without printing it as text')
     p.add_argument('--coordinate-scale', type=float, help='Override coordinate horizontal scale (0–1); font height is unchanged')
@@ -881,7 +995,7 @@ def main():
     p.add_argument('--height', type=float, default=None, help='Label height in inches (0.33–10.5); barcode stays vertically centered')
     p.add_argument('--separate-habitat', action='store_true', help='Place a smaller 4-point habitat label (up to three lines) directly below each main label')
     p.add_argument('--habitat-height', type=float, default=.20, help='Separate habitat label height in inches (default 0.20)')
-    p.add_argument('--habitat-width', type=float, default=.62, help='Separate habitat label width in inches (default 0.62; must be less than main width)')
+    p.add_argument('--habitat-width', type=float, default=None, help='Separate habitat label width in inches (default 0.62; must be less than main width)')
     p.add_argument('--habitat-max-lines', type=int, choices=[2, 3], default=3, help='Maximum physical lines on separate habitat label (default 3)')
     p.add_argument('--habitat-gap', type=float, default=.02, help='Gap between main and separate habitat label in inches (default 0.02)')
     p.add_argument('--field-size', type=float, choices=[3.5, 4.0], default=4.0, help='Field-number font size (default 4)')
