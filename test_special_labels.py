@@ -128,4 +128,21 @@ class SpecialLabels(unittest.TestCase):
         for text,expected in [('M.Branstetter, C.Meidt','M.Branstetter'),('Branstetter, M.; Meidt, C.','Branstetter, M.'),('Branstetter, M.','Branstetter, M.'),('Michael Branstetter and Colleen Meidt','Michael Branstetter')]:
             self.assertEqual(l.first_collector_label({'Collector_Label':text}),expected)
         self.assertEqual(l.first_collector_label({'Collector_Label':'Full list','First_Collector_Label':'M.Branstetter'}),'M.Branstetter')
+    def test_wrapped_collection_only_preserves_coordinates_and_four_point_type(self):
+        with tempfile.TemporaryDirectory() as root:
+            out=Path(root)/'wrapped.pdf'
+            cmd=[sys.executable,'label_maker.py','examples/label_options_examples.xlsx','--sheet','Collection_Only','--mode','collection-only','--layout','flow','--output',str(out)]
+            result=subprocess.run(cmd,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            r=json.loads(out.with_suffix('.json').read_text())['records'][0]
+            self.assertLessEqual(len(r['lines']),6)
+            self.assertTrue(all(n==4 for n in r['line_font_points']))
+            coords=[t for t in r['lines'] if '41.89971' in t or '-111.64205' in t]
+            self.assertEqual(len(coords),1)
+            self.assertIn('41.89971 -111.64205±200m',coords[0])
+            self.assertIn('M.Branstetter',' '.join(r['lines']))
+            self.assertNotIn('C.Meidt',' '.join(r['lines']))
+            result=subprocess.run(cmd+['--separate-habitat'],capture_output=True,text=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('for single labels',result.stderr)
 if __name__=='__main__':unittest.main()

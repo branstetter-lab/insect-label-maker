@@ -724,7 +724,7 @@ def collection_only_runs(row, text):
     return [(part, 4, scale) for part, _, scale in coordinate_runs(row, text, 4, combined=True)]
 
 
-def collection_only_plan(row, label_width, templates, max_lines=6):
+def collection_only_plan(row, label_width, templates, max_lines=6, wrapped=False):
     """Stable collection field lines, 4-point type, first collector only."""
     display = dict(row, Collector_Label=first_collector_label(row))
     event = ' #' + row['Field_Number'] if row.get('Field_Number') else ''
@@ -739,6 +739,32 @@ def collection_only_plan(row, label_width, templates, max_lines=6):
     if not any(text.strip() for text in texts):
         raise ValueError(f"Excel row {row['_excel_row']}: no collection text to print.")
     available = label_width - 2 * PAD
+    if wrapped:
+        coordinates = f"{row.get('Latitude', '')} {row.get('Longitude', '')}"
+        if row.get('Uncertainty'):
+            coordinates += f"±{row['Uncertainty']}m"
+        tokens = []
+        for text in texts:
+            if not text.strip():
+                continue
+            if tokens:
+                tokens[-1] = tokens[-1].rstrip(',;') + ','
+            if row.get('Latitude') and row.get('Longitude') and coordinates in text:
+                before,after=text.split(coordinates,1)
+                tokens.extend(before.split());tokens.append(coordinates);tokens.extend(after.split())
+            else:
+                tokens.extend(text.split())
+        texts=[];current=''
+        for token in tokens:
+            candidate=(current+' '+token).strip()
+            measured=sum(fit_width(t,sz)/TEXT_SCALE*scale for t,sz,scale in collection_only_runs(display,candidate))
+            if measured>available:
+                if current:texts.append(current)
+                current=token
+            else:current=candidate
+        if current:texts.append(current)
+        if len(texts)>max_lines:
+            raise ValueError(f"Excel row {row['_excel_row']}: wrapped collection text needs {len(texts)} lines; maximum is {max_lines} at 4 pt. Shorten label wording.")
     for index, text in enumerate(texts, 1):
         measured = sum(fit_width(part, size) / TEXT_SCALE * scale for part, size, scale in collection_only_runs(display,text))
         if measured > available:
@@ -757,6 +783,8 @@ def collection_only_plan(row, label_width, templates, max_lines=6):
 
 
 def generate_collection_only(args, rows):
+    if args.separate_habitat and args.layout == 'flow':
+        raise ValueError('Wrapped collection-only mode is for single labels; omit --layout flow for paired labels.')
     if args.main_size != 4:
         raise ValueError('Collection-only labels use fixed 4-point text; omit --main-size or set it to 4.')
     if args.omit_catalog_text:
@@ -774,7 +802,7 @@ def generate_collection_only(args, rows):
         templates=separate_habitat_templates(templates)
     width=args.width*72
     max_lines = 5 if args.separate_habitat else 6
-    plans=[collection_only_plan(row,width,templates,max_lines) for row in rows]
+    plans=[collection_only_plan(row,width,templates,max_lines,wrapped=args.layout == 'flow') for row in rows]
     habitats=[habitat_label_plan(row,args.habitat_width*72,args.habitat_height*72,args.habitat_max_lines,args.include_method) for row in rows] if args.separate_habitat else []
     pair_height=HEIGHT+(args.habitat_gap+args.habitat_height)*72 if args.separate_habitat else HEIGHT
     positions=sheet_positions(rows,width,pair_height,not args.no_field_headings)
@@ -804,9 +832,9 @@ def generate_collection_only(args, rows):
             else:draw_habitat_label(pdf,habitat,x,habitat['y_points'],args.habitat_width*72,args.guides)
         records.append(dict(excel_row=row['_excel_row'],field_number=row.get('Field_Number',''),catalog_number=None,placement=pos,habitat_label=habitat,**plan))
     pdf.save();temp.replace(output)
-    report=dict(mode='collection-only',barcode=None,barcode_rendering=None,barcode_raster_dpi=None,catalog_text=False,font=pdfmetrics.getFont('LabelRegular').face.familyName.decode(),labels=len(rows),physical_labels=len(rows)*(2 if args.separate_habitat else 1),width_inches=args.width,height_inches=args.height,max_main_lines=max_lines,text_horizontal_scale=TEXT_SCALE,main_font_points=4,text_width_points=width-2*PAD,separate_habitat=args.separate_habitat,habitat_label_width_inches=args.habitat_width if args.separate_habitat else None,habitat_label_height_inches=args.habitat_height if args.separate_habitat else None,habitat_label_gap_inches=args.habitat_gap if args.separate_habitat else None,include_method=args.include_method,records=records)
+    report=dict(mode='collection-only',layout=args.layout,barcode=None,barcode_rendering=None,barcode_raster_dpi=None,catalog_text=False,font=pdfmetrics.getFont('LabelRegular').face.familyName.decode(),labels=len(rows),physical_labels=len(rows)*(2 if args.separate_habitat else 1),width_inches=args.width,height_inches=args.height,max_main_lines=max_lines,text_horizontal_scale=TEXT_SCALE,main_font_points=4,text_width_points=width-2*PAD,separate_habitat=args.separate_habitat,habitat_label_width_inches=args.habitat_width if args.separate_habitat else None,habitat_label_height_inches=args.habitat_height if args.separate_habitat else None,habitat_label_gap_inches=args.habitat_gap if args.separate_habitat else None,include_method=args.include_method,records=records)
     output.with_suffix('.json').write_text(json.dumps(report,indent=2))
-    print(f'Created {output}: {len(rows)} collection-only labels, {args.width:g} × {args.height:g} inches; {max_lines} fixed 4-point lines; first collector only; no barcode or catalog text.')
+    print(f'Created {output}: {len(rows)} collection-only labels, {args.width:g} × {args.height:g} inches; {max_lines} {'wrapped' if args.layout == 'flow' else 'fixed'} 4-point lines; first collector only; no barcode or catalog text.')
 
 
 def generate(args):

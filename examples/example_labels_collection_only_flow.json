@@ -1,0 +1,80 @@
+{
+  "mode": "collection-only",
+  "layout": "flow",
+  "barcode": null,
+  "barcode_rendering": null,
+  "barcode_raster_dpi": null,
+  "catalog_text": false,
+  "font": "Verdana",
+  "labels": 1,
+  "physical_labels": 1,
+  "width_inches": 0.68,
+  "height_inches": 0.38,
+  "max_main_lines": 6,
+  "text_horizontal_scale": 0.62,
+  "main_font_points": 4,
+  "text_width_points": 47.96,
+  "separate_habitat": false,
+  "habitat_label_width_inches": null,
+  "habitat_label_height_inches": null,
+  "habitat_label_gap_inches": null,
+  "include_method": false,
+  "records": [
+    {
+      "excel_row": 2,
+      "field_number": "MGB4209",
+      "catalog_number": null,
+      "placement": {
+        "page": 1,
+        "x_points": 18.0,
+        "y_points": 738.64,
+        "heading": {
+          "text": "----- MGB4209 -----",
+          "field_number": "MGB4209",
+          "continued": false,
+          "x_points": 18.0,
+          "baseline": 769
+        }
+      },
+      "habitat_label": null,
+      "lines": [
+        "USA: UT, Cache Co., Tony Grove,",
+        "0.5km NNE, 41.89971 -111.64205\u00b1200m,",
+        "2500m, 24Jun2022, M.Branstetter",
+        "#MGB4209, alpine meadow;",
+        "Taraxacum officinale"
+      ],
+      "line_font_points": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ],
+      "baselines": [
+        21.3637890625,
+        16.9637890625,
+        12.5637890625,
+        8.1637890625,
+        3.763789062499999
+      ],
+      "italic_ranges": [
+        [],
+        [],
+        [],
+        [],
+        [
+          [
+            0,
+            9
+          ],
+          [
+            10,
+            20
+          ]
+        ]
+      ],
+      "first_collector_label": "M.Branstetter"
+    }
+  ]
+}

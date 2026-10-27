@@ -8,7 +8,7 @@ The tool runs locally, reads the workbook without changing it, and exports a US 
 
 ## Try all label options
 
-Download the [printable nine-layout sampler](examples/label_options_sampler.pdf) and [filled example workbook](examples/label_options_examples.xlsx). Each layout has its own worksheet; the Instructions worksheet lists the corresponding command options. The sampler shows actual-size labels with light boundary guides. Eight layouts use the real collection record BBSL1207977 / MGB4209, shared with permission; the determination layout remains explicitly fictional because no specimen determination was supplied. Catalog IDs are intentionally repeated across alternative layouts. The sampler notes any automatic fit-related omissions. Print at 100%, not Fit to page.
+Download the [printable ten-layout sampler](examples/label_options_sampler.pdf) and [filled example workbook](examples/label_options_examples.xlsx). Each layout has its own worksheet; the Instructions worksheet lists the corresponding command options. The sampler shows actual-size labels with light boundary guides. Nine layouts use the real collection record BBSL1207977 / MGB4209, shared with permission; the determination layout remains explicitly fictional because no specimen determination was supplied. Catalog IDs are intentionally repeated across alternative layouts. The sampler notes any automatic fit-related omissions. Print at 100%, not Fit to page.
 
 The [blank all-options workbook](templates/all_options_input_template.xlsx) contains matching empty worksheets. Select the worksheet with `--sheet`, and use the flags listed on its Instructions worksheet. These are alternative views of the same example records, not seven new specimen sets.
 
@@ -136,9 +136,17 @@ The single collection label defaults to **0.68 × 0.38 inches** for six clearly 
 
 Only the first collector is printed; the input's full collector list remains unchanged. An optional `First_Collector_Label` column explicitly controls the displayed name when name separators are ambiguous. Initial-first comma-separated display names, semicolon-separated names, and names separated by “and” or “&” are supported. Surname-first names such as `Branstetter, M.` are retained as one name.
 
-Verdana body text uses 62% horizontal scale in this mode (Arial: 70%) to accommodate the combined fields at 4 pt. Coordinates retain their separate compression, but uncertainty is also 4 pt. Equal baseline spacing keeps line positions consistent across labels, including paired versions. If a line does not fit, the tool reports that line rather than shrinking text, dropping information, or reflowing it. Use shorter display wording or an explicit custom template with at most six fixed lines for a single label, or five for the paired version. `--layout` does not change this mode's fixed-line policy; `--main-size` must be 4.
+Verdana body text uses 62% horizontal scale in this mode (Arial: 70%) to accommodate the combined fields at 4 pt. Coordinates retain their separate compression, but uncertainty is also 4 pt. Equal baseline spacing keeps line positions consistent across labels, including paired versions. If a line does not fit, the tool reports that line rather than shrinking text, dropping information, or reflowing it. Use shorter display wording or an explicit custom template with at most six fixed lines for a single label, or five for the paired version. Fixed lines remain the default; `--main-size` must be 4.
 
 With `--separate-habitat`, the smaller label defaults to **0.56 × 0.20 inches**, with the existing 0.02-inch gap, 4-point text, and maximum three lines. Add `--include-method` to include sampling protocol there. The main collection label retains the five field groupings listed above; macrohabitat, microhabitat, and optional method move to the second label, with a maximum of three physical lines. The smaller habitat label uses the same selected-family horizontal scale as the main collection-only label. `--width`, `--height`, and habitat sizing options can be adjusted explicitly; maximum main width remains 0.68 inch.
+
+For a **wrapped single collection label**, add `--layout flow`:
+
+```sh
+python label_maker.py input.xlsx --mode collection-only --layout flow --output output/collection_wrapped.pdf
+```
+
+This retains 4-point type and the same 0.68 × 0.38-inch size, but joins fields with commas and wraps them into up to six lines. Latitude/longitude and uncertainty stay together. Only the first collector and collection number are printed, and no collection fields are automatically dropped. If it cannot fit, generation stops with a fit error. This wrapped option is not used with `--separate-habitat`; paired labels keep the five fixed main lines and up to three habitat lines. [Printable wrapped example](examples/example_labels_collection_only_flow.pdf).
 
 Use [the collection-only template](templates/collection_only_input_template.xlsx), or the `Collection_Only` / `Collection_Only_Paired` sheets in the all-options workbook. **Catalog_Number is not required in this mode**, and an existing column is ignored for printing. Enter one row per desired label; identical event rows are allowed for printing multiple copies. This mode does not allocate IDs or print existing IDs, so keep any separately assigned barcode linked to its cataloged pin or vial in your records.
 
