@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Collection-only labels now use six fixed lines when combined, or five main lines plus up to three separate habitat/method lines. Coordinates, elevation/date, and collector/event code each have their own line. The six-line version is 0.38 inches high to retain 4-point text.
+
 - Enlarged collection-only labels to 0.68 × 0.33 inches with five fixed 4-point lines, first collector only, and unchanged input collector lists.
 
 - Added five-line collection-only labels, optionally paired with a separate habitat/method label, without Catalog Number requirements or barcode artwork.

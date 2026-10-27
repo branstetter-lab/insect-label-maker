@@ -724,18 +724,16 @@ def collection_only_runs(row, text):
     return [(part, 4, scale) for part, _, scale in coordinate_runs(row, text, 4, combined=True)]
 
 
-def collection_only_plan(row, label_width, templates):
-    """Five stable field lines, 4-point type, first collector only."""
+def collection_only_plan(row, label_width, templates, max_lines=6):
+    """Stable collection field lines, 4-point type, first collector only."""
     display = dict(row, Collector_Label=first_collector_label(row))
     event = ' #' + row['Field_Number'] if row.get('Field_Number') else ''
     if templates in (DEFAULT_LINES, DEFAULT_LINES[:5]):
-        fixed = [DEFAULT_LINES[0], DEFAULT_LINES[1],
-                 '[Latitude] [Longitude]±[Uncertainty]m, [Verbatim_Elevation]',
-                 '[Verbatim_Date], [Collector_Label]' + event,
-                 HABITAT_TEMPLATE if templates == DEFAULT_LINES else '']
+        fixed = list(templates)
+        fixed[4] += event
     else:
-        if len(templates) > 5:
-            raise ValueError('Collection-only custom templates must have at most five fixed lines.')
+        if len(templates) > max_lines:
+            raise ValueError(f'Collection-only custom templates must have at most {max_lines} fixed lines.')
         fixed = [t + (event if '[Collector_Label]' in t else '') for t in templates]
     texts = render_lines(display, fixed, True)
     if not any(text.strip() for text in texts):
@@ -744,7 +742,7 @@ def collection_only_plan(row, label_width, templates):
     for index, text in enumerate(texts, 1):
         measured = sum(fit_width(part, size) / TEXT_SCALE * scale for part, size, scale in collection_only_runs(display,text))
         if measured > available:
-            raise ValueError(f"Excel row {row['_excel_row']}: collection-only line {index} cannot fit at 4 pt in five fixed lines. Shorten its label fields or increase --width (maximum 0.68); text is not shrunk or moved between lines.")
+            raise ValueError(f"Excel row {row['_excel_row']}: collection-only line {index} cannot fit at 4 pt in {max_lines} fixed lines. Shorten its label fields or increase --width (maximum 0.68); text is not shrunk or moved between lines.")
     sizes = [4] * len(texts)
     emphasis = label_italic_ranges(texts, row.get('Microhabitat_Label', ''))
     # A fixed grid keeps identical line positions even when habitat is separate.
@@ -753,7 +751,7 @@ def collection_only_plan(row, label_width, templates):
     below = max(-pdfmetrics.getDescent(name)*4/1000 for name in ('LabelRegular','LabelItalic'))
     block_height = above + leading*(len(texts)-1) + below
     if block_height > HEIGHT-2*PAD:
-        raise ValueError(f"Excel row {row['_excel_row']}: five 4-point lines need more height; increase --height.")
+        raise ValueError(f"Excel row {row['_excel_row']}: {len(texts)} 4-point lines need more height; increase --height.")
     first=(HEIGHT+block_height)/2-above
     return dict(lines=texts,line_font_points=sizes,baselines=[first-i*leading for i in range(len(texts))],italic_ranges=emphasis,first_collector_label=display['Collector_Label'])
 
@@ -775,7 +773,8 @@ def generate_collection_only(args, rows):
             raise ValueError('Habitat height must be positive and gap nonnegative.')
         templates=separate_habitat_templates(templates)
     width=args.width*72
-    plans=[collection_only_plan(row,width,templates) for row in rows]
+    max_lines = 5 if args.separate_habitat else 6
+    plans=[collection_only_plan(row,width,templates,max_lines) for row in rows]
     habitats=[habitat_label_plan(row,args.habitat_width*72,args.habitat_height*72,args.habitat_max_lines,args.include_method) for row in rows] if args.separate_habitat else []
     pair_height=HEIGHT+(args.habitat_gap+args.habitat_height)*72 if args.separate_habitat else HEIGHT
     positions=sheet_positions(rows,width,pair_height,not args.no_field_headings)
@@ -805,16 +804,16 @@ def generate_collection_only(args, rows):
             else:draw_habitat_label(pdf,habitat,x,habitat['y_points'],args.habitat_width*72,args.guides)
         records.append(dict(excel_row=row['_excel_row'],field_number=row.get('Field_Number',''),catalog_number=None,placement=pos,habitat_label=habitat,**plan))
     pdf.save();temp.replace(output)
-    report=dict(mode='collection-only',barcode=None,barcode_rendering=None,barcode_raster_dpi=None,catalog_text=False,font=pdfmetrics.getFont('LabelRegular').face.familyName.decode(),labels=len(rows),physical_labels=len(rows)*(2 if args.separate_habitat else 1),width_inches=args.width,height_inches=args.height,max_main_lines=5,text_horizontal_scale=TEXT_SCALE,main_font_points=4,text_width_points=width-2*PAD,separate_habitat=args.separate_habitat,habitat_label_width_inches=args.habitat_width if args.separate_habitat else None,habitat_label_height_inches=args.habitat_height if args.separate_habitat else None,habitat_label_gap_inches=args.habitat_gap if args.separate_habitat else None,include_method=args.include_method,records=records)
+    report=dict(mode='collection-only',barcode=None,barcode_rendering=None,barcode_raster_dpi=None,catalog_text=False,font=pdfmetrics.getFont('LabelRegular').face.familyName.decode(),labels=len(rows),physical_labels=len(rows)*(2 if args.separate_habitat else 1),width_inches=args.width,height_inches=args.height,max_main_lines=max_lines,text_horizontal_scale=TEXT_SCALE,main_font_points=4,text_width_points=width-2*PAD,separate_habitat=args.separate_habitat,habitat_label_width_inches=args.habitat_width if args.separate_habitat else None,habitat_label_height_inches=args.habitat_height if args.separate_habitat else None,habitat_label_gap_inches=args.habitat_gap if args.separate_habitat else None,include_method=args.include_method,records=records)
     output.with_suffix('.json').write_text(json.dumps(report,indent=2))
-    print(f'Created {output}: {len(rows)} collection-only labels, {args.width:g} × {args.height:g} inches; five fixed 4-point lines; first collector only; no barcode or catalog text.')
+    print(f'Created {output}: {len(rows)} collection-only labels, {args.width:g} × {args.height:g} inches; {max_lines} fixed 4-point lines; first collector only; no barcode or catalog text.')
 
 
 def generate(args):
     global BARCODE_RENDERING, BAR
     mode = getattr(args, 'mode', 'locality')
     if args.width is None: args.width = .32 if mode == 'pin-barcode' else .55 if mode == 'barcode' else .68
-    if args.height is None: args.height = .30 if mode in {'barcode','pin-barcode'} else .33
+    if args.height is None: args.height = .38 if mode == 'collection-only' and not args.separate_habitat else .30 if mode in {'barcode','pin-barcode'} else .33
     if args.habitat_width is None: args.habitat_width = .56 if mode == 'collection-only' else .62
     if args.barcode_scale is None: args.barcode_scale = 1.05 if mode in {'barcode','determination'} else 1.02
     barcode_scale = args.barcode_scale

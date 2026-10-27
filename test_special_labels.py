@@ -95,7 +95,7 @@ class SpecialLabels(unittest.TestCase):
             self.assertEqual(report['font'],'Verdana')
             self.assertEqual(report['text_horizontal_scale'],.70)
             self.assertEqual(report['coordinate_horizontal_scale'],.49)
-    def test_collection_only_no_catalog_and_five_line_limit(self):
+    def test_collection_only_fixed_field_lines(self):
         with tempfile.TemporaryDirectory() as root:
             source=Path(root)/'input.xlsx';out=Path(root)/'out.pdf'
             original=openpyxl.load_workbook('examples/label_options_examples.xlsx',data_only=True)
@@ -108,19 +108,21 @@ class SpecialLabels(unittest.TestCase):
                 self.assertEqual(result.returncode,0,result.stderr)
                 d=json.loads(out.with_suffix('.json').read_text());self.assertEqual(d['labels'],2)
                 self.assertIsNone(d['barcode']);self.assertEqual(d['width_inches'],.68)
-                self.assertEqual(d['height_inches'],.33)
-                self.assertEqual(d['records'][0]['line_font_points'],[4]*5)
+                self.assertEqual(d['height_inches'],.33 if flags else .38)
+                self.assertEqual(d['records'][0]['line_font_points'],[4]*(5 if flags else 6))
                 self.assertEqual(d['records'][0]['first_collector_label'],'M.Branstetter')
                 self.assertEqual(d['records'][0]['lines'][0],'USA: UT, Cache Co.')
-                self.assertIn('24Jun2022, M.Branstetter #MGB4209',d['records'][0]['lines'])
+                self.assertEqual(d['records'][0]['lines'][2],'41.89971 -111.64205±200m')
+                self.assertEqual(d['records'][0]['lines'][3],'2500m, 24Jun2022')
+                self.assertEqual(d['records'][0]['lines'][4],'M.Branstetter #MGB4209')
                 self.assertNotIn('C.Meidt',' '.join(d['records'][0]['lines']))
-                self.assertTrue(all(len(r['lines'])<=5 for r in d['records']))
+                self.assertTrue(all(len(r['lines'])<=(5 if flags else 6) for r in d['records']))
                 reader=PdfReader(out);self.assertTrue(all(not list(p.images) for p in reader.pages))
                 self.assertIn('#MGB4209',reader.pages[0].extract_text())
             col=list(rows[0]).index('LocalityLabel')+1
             sheet.cell(2,col,'W'*200);book.save(source)
             result=subprocess.run([sys.executable,'label_maker.py',str(source),'--mode','collection-only','--output',str(out)],capture_output=True,text=True)
-            self.assertNotEqual(result.returncode,0);self.assertIn('five fixed lines',result.stderr)
+            self.assertNotEqual(result.returncode,0);self.assertIn('6 fixed lines',result.stderr)
     def test_first_collector_display_names_and_explicit_override(self):
         import label_maker as l
         for text,expected in [('M.Branstetter, C.Meidt','M.Branstetter'),('Branstetter, M.; Meidt, C.','Branstetter, M.'),('Branstetter, M.','Branstetter, M.'),('Michael Branstetter and Colleen Meidt','Michael Branstetter')]:
